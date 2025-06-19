@@ -25,7 +25,7 @@ const Navbar = () => {
       <div className="md:w-[60%] w-full flex items-center flex-wrap gap-3 relative">
         <Dropdown
           title="Distance"
-          items={["2.1km", "2.2km", "2.3km", "2.4km"]}
+          items={["2.1 miles", "2.2 miles", "2.3 miles", "2.4 miles"]}
         />
         <Dropdown title="Bedrooms" items={["2", "3", "4", "5"]} />
         <Dropdown title="Price" items={["$2000", "$3000", "$4000", "$5000"]} />
