@@ -13,10 +13,11 @@ const columns = [
   { id: "Status", label: "Listing Status" },
   { id: "YearBuilt", label: "Year Built" },
   { id: "Bathrooms", label: "Bathrooms" },
+  { id: "Size", label: "Size" },
 ] as const;
 
 interface Property {
-  title: string;
+  Title: string;
   Distance: string;
   Bedrooms: number;
   Price: string;
@@ -30,105 +31,115 @@ interface Property {
 
 const data: Property[] = [
   {
-    title: "Modern Family Home with Garden",
+    Title: "Modern Family Home with Garden",
     Distance: "0.8 miles",
     Bedrooms: 4,
     Price: "$620,000",
     SquareFootage: "1,800 sqft",
+    Size: "2,000 sqft",
     Status: "Sold",
     YearBuilt: 2012,
     Bathrooms: 3,
     dateSold: new Date("2024-11-15"),
   },
   {
-    title: "Cozy Downtown Apartment",
+    Title: "Cozy Downtown Apartment",
     Distance: "1.5 miles",
     Bedrooms: 2,
     Price: "$350,000",
     SquareFootage: "950 sqft",
+    Size: "2,500 sqft",
     Status: "On Sale",
     YearBuilt: 2017,
     Bathrooms: 1,
   },
   {
-    title: "Luxury Condo with Pool Access",
+    Title: "Luxury Condo with Pool Access",
     Distance: "2.3 miles",
     Bedrooms: 3,
     Price: "$780,000",
     SquareFootage: "2,100 sqft",
+    Size: "2,900 sqft",
     Status: "Sold",
     YearBuilt: 2020,
     Bathrooms: 2,
     dateSold: new Date("2025-03-02"),
   },
   {
-    title: "Spacious Suburban Bungalow",
+    Title: "Spacious Suburban Bungalow",
     Distance: "0.4 miles",
     Bedrooms: 5,
     Price: "$510,000",
     SquareFootage: "2,400 sqft",
+    Size: "2,800 sqft",
     Status: "On Sale",
     YearBuilt: 2008,
     Bathrooms: 4,
   },
   {
-    title: "Minimalist Smart Apartment",
+    Title: "Minimalist Smart Apartment",
     Distance: "1.9 miles",
     Bedrooms: 1,
     Price: "$280,000",
     SquareFootage: "720 sqft",
+    Size: "1,000 sqft",
     Status: "On Sale",
     YearBuilt: 2021,
     Bathrooms: 1,
   },
   {
-    title: "Renovated Vintage Flat",
+    Title: "Renovated Vintage Flat",
     Distance: "1.1 miles",
     Bedrooms: 2,
     Price: "$420,000",
     SquareFootage: "1,200 sqft",
+    Size: "2,000 sqft",
     Status: "Sold",
     YearBuilt: 1992,
     Bathrooms: 2,
     dateSold: new Date("2025-01-12"),
   },
   {
-    title: "Studio Loft with Skyline View",
+    Title: "Studio Loft with Skyline View",
     Distance: "2.0 miles",
     Bedrooms: 1,
     Price: "$310,000",
     SquareFootage: "680 sqft",
+    Size: "2,000 sqft",
     Status: "On Sale",
     YearBuilt: 2019,
     Bathrooms: 1,
   },
   {
-    title: "Smart Home in Green Zone",
+    Title: "Smart Home in Green Zone",
     Distance: "0.6 miles",
     Bedrooms: 3,
     Price: "$560,000",
     SquareFootage: "1,700 sqft",
+    Size: "2,000 sqft",
     Status: "Sold",
     YearBuilt: 2015,
     Bathrooms: 2,
     dateSold: new Date("2024-12-25"),
   },
   {
-    title: "Penthouse with Private Deck",
+    Title: "Penthouse with Private Deck",
     Distance: "3.1 miles",
     Bedrooms: 4,
     Price: "$950,000",
     SquareFootage: "2,800 sqft",
+    Size: "3,000 sqft",
     Status: "On Sale",
     YearBuilt: 2018,
     Bathrooms: 3,
   },
   {
-    title: "Eco-Friendly Modular House",
+    Title: "Eco-Friendly Modular House",
     Distance: "1.7 miles",
     Bedrooms: 2,
     Price: "$390,000",
     SquareFootage: "1,000 sqft",
+    Size: "2,000 sqft",
     Status: "On Sale",
     YearBuilt: 2022,
     Bathrooms: 2,
@@ -164,10 +175,8 @@ const PropertiesList = () => {
         const dateB = b.dateSold ? new Date(b.dateSold).getTime() : 0;
         return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
       }
-
       return 0; // Both are On Sale
     }
-
     // Generic sorting logic
     const parseValue = (val: string | number) => {
       if (typeof val === "number") return val;
@@ -204,7 +213,7 @@ const PropertiesList = () => {
         {/* Selected Property Details */}
         <div className="w-full flex flex-col mb-4 md:px-2 px-1 h-[25%] border-b-2 border-[#E5E5E5] overflow-x-auto scrollbar-hide">
           <div className="w-full flex items-center justify-between min-w-[300px]">
-            <h3 className="text-lg font-semibold">{selectedProperty.title}</h3>
+            <h3 className="text-lg font-semibold">{selectedProperty.Title}</h3>
             <h3 className="text-lg font-semibold">{selectedProperty.Price}</h3>
           </div>
           <div className="w-full mt-2 mb-4 overflow-x-auto scrollbar-hide">
