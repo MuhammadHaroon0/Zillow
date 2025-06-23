@@ -31,44 +31,22 @@ export const size = [
   { id: "7500", label: "7,500 sqft" },
 ];
 
-export const yearBuilt = [
-  { id: "2000", label: "2000" },
-  { id: "2001", label: "2001" },
-  { id: "2002", label: "2002" },
-  { id: "2003", label: "2003" },
-  { id: "2004", label: "2004" },
-  { id: "2005", label: "2005" },
-  { id: "2006", label: "2006" },
-  { id: "2007", label: "2007" },
-  { id: "2008", label: "2008" },
-  { id: "2009", label: "2009" },
-  { id: "2010", label: "2010" },
-  { id: "2011", label: "2011" },
-  { id: "2012", label: "2012" },
-  { id: "2013", label: "2013" },
-  { id: "2014", label: "2014" },
-  { id: "2015", label: "2015" },
-  { id: "2016", label: "2016" },
-  { id: "2017", label: "2017" },
-  { id: "2018", label: "2018" },
-  { id: "2019", label: "2019" },
-  { id: "2020", label: "2020" },
-  { id: "2021", label: "2021" },
-  { id: "2022", label: "2022" },
-  { id: "2023", label: "2023" },
-  { id: "2024", label: "2024" },
-  { id: "2025", label: "2025" },
-];
-
 export const listingStatus = [
-  { id: "ForSale", label: "For Sale" },
-  { id: "ForRent", label: "For Rent" },
+  { id: "ForSale", label: "On Sale" },
   { id: "Sold", label: "Sold" },
+  { id: "ForRent", label: "On Rent" },
 ];
 
 export const distance = [
-  { id: "2.1", label: "2.1miles" },
-  { id: "2.2", label: "2.2miles" },
-  { id: "2.3", label: "2.3miles" },
-  { id: "2.4", label: "2.4miles" },
+  { id: "2.1", label: "2.1 miles" },
+  { id: "2.2", label: "2.2 miles" },
+  { id: "2.3", label: "2.3 miles" },
+  { id: "2.4", label: "2.4 miles" },
+];
+
+export const acreage = [
+  { id: "435,600", label: "10 acres" },
+  { id: "871,200", label: "20 acres" },
+  { id: "2,178,000", label: "50 acres" },
+  { id: "4,356,000", label: "100 acres" },
 ];

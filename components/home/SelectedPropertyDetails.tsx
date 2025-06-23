@@ -14,14 +14,16 @@ const SelectedPropertyDetails = ({
   selectedState,
   columns,
 }: SelectedPropertyDetailsProps) => {
+  console.log(selectedProperty);
+
   return (
-    <div className="w-full flex flex-col mb-4 md:px-2 px-1 h-[25%] border-b-2 border-[#E5E5E5] overflow-x-auto scrollbar-hide">
+    <div className="w-full flex flex-col mb-4 md:px-2 px-1  border-b-2 border-[#E5E5E5] overflow-x-auto scrollbar-hide">
       <div className="w-full flex items-center justify-between min-w-[300px]">
         <h3 className="text-lg font-semibold">
-          {formatAddress(selectedProperty.address)}
+          {formatAddress(selectedProperty.Address)}
         </h3>
         <h3 className="text-lg font-semibold">
-          {formatPropertyValue(selectedProperty, "price")}
+          {formatPropertyValue(selectedProperty, "Price")}
         </h3>
       </div>
       <div className="w-full mt-2 mb-4 overflow-x-auto scrollbar-hide">

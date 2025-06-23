@@ -10,81 +10,165 @@ import { useState, useMemo } from "react";
 
 const center = { lat: 34.0522, lng: -118.2437 };
 
-const allProperties = [
+interface Property {
+  Title: string;
+  Distance: string;
+  Bedrooms: number;
+  Price: string;
+  Acreage: string;
+  Status: string;
+  YearBuilt: number;
+  Bathrooms: number;
+  DateSold?: Date;
+  [key: string]: any;
+}
+
+const data: Property[] = [
   {
     id: 1,
     lat: 34.0522,
     lng: -118.2437,
-    price: "$720,000",
-    beds: 4,
-    baths: 4,
-    status: "On Sale",
+    Title: "Modern Family Home with Garden",
+    Distance: "0.8 miles",
+    Bedrooms: 4,
+    Price: "$620,000",
+    Acreage: "20 acres",
+    SquareFeet: "2,000 sqft",
+    Status: "Sold",
+    YearBuilt: 2012,
+    Bathrooms: 3,
+    DateSold: new Date("2024-11-15"),
   },
   {
     id: 2,
     lat: 34.06,
     lng: -118.25,
-    price: "$407,000",
-    beds: 3,
-    baths: 2,
-    status: "Sold",
+    Title: "Cozy Downtown Apartment",
+    Distance: "1.5 miles",
+    Bedrooms: 2,
+    Price: "$350,000",
+    Acreage: "24 acres",
+    SquareFeet: "2,500 sqft",
+    Status: "On Sale",
+    YearBuilt: 2017,
+    Bathrooms: 1,
   },
   {
     id: 3,
     lat: 34.055,
     lng: -118.24,
-    price: "$510,000",
-    beds: 2,
-    baths: 2,
-    status: "On Sale",
+    Title: "Luxury Condo with Pool Access",
+    Distance: "2.3 miles",
+    Bedrooms: 3,
+    Price: "$780,000",
+    Acreage: "26 acres",
+    SquareFeet: "2,900 sqft",
+    Status: "Sold",
+    YearBuilt: 2020,
+    Bathrooms: 2,
+    DateSold: new Date("2025-03-02"),
   },
   {
     id: 4,
     lat: 34.045,
     lng: -118.245,
-    price: "$685,000",
-    beds: 3,
-    baths: 3,
-    status: "Pending",
+    Title: "Spacious Suburban Bungalow",
+    Distance: "0.4 miles",
+    Bedrooms: 5,
+    Price: "$510,000",
+    Acreage: "50 acres",
+    SquareFeet: "2,800 sqft",
+    Status: "On Sale",
+    YearBuilt: 2008,
+    Bathrooms: 4,
   },
   {
     id: 5,
     lat: 34.048,
     lng: -118.23,
-    price: "$430,000",
-    beds: 2,
-    baths: 1,
-    status: "Sold",
+    Title: "Minimalist Smart Apartment",
+    Distance: "1.9 miles",
+    Bedrooms: 1,
+    Price: "$280,000",
+    Acreage: "29 acres",
+    SquareFeet: "1,000 sqft",
+    Status: "On Sale",
+    YearBuilt: 2021,
+    Bathrooms: 1,
   },
   {
     id: 6,
     lat: 34.038,
     lng: -118.255,
-    price: "$800,000",
-    beds: 4,
-    baths: 3,
-    status: "On Sale",
+    Title: "Renovated Vintage Flat",
+    Distance: "1.1 miles",
+    Bedrooms: 2,
+    Price: "$420,000",
+    Acreage: "67 acres",
+    SquareFeet: "2,000 sqft",
+    Status: "Sold",
+    YearBuilt: 1992,
+    Bathrooms: 2,
+    DateSold: new Date("2025-01-12"),
   },
   {
     id: 7,
     lat: 34.065,
     lng: -118.225,
-    price: "$720,000",
-    beds: 5,
-    baths: 4,
-    status: "New Listing",
+    Title: "Studio Loft with Skyline View",
+    Distance: "2.0 miles",
+    Bedrooms: 1,
+    Price: "$310,000",
+    Acreage: "25 acres",
+    SquareFeet: "2,000 sqft",
+    Status: "On Sale",
+    YearBuilt: 2019,
+    Bathrooms: 1,
+  },
+  {
+    id: 8,
+    lat: 34.05,
+    lng: -118.22,
+    Title: "Smart Home in Green Zone",
+    Distance: "0.6 miles",
+    Bedrooms: 3,
+    Price: "$560,000",
+    Acreage: "20 acres",
+    SquareFeet: "2,000 sqft",
+    Status: "Sold",
+    YearBuilt: 2015,
+    Bathrooms: 2,
+    DateSold: new Date("2024-12-25"),
+  },
+  {
+    id: 9,
+    lat: 34.058,
+    lng: -118.235,
+    Title: "Penthouse with Private Deck",
+    Distance: "3.1 miles",
+    Bedrooms: 4,
+    Price: "$950,000",
+    Acreage: "20 acres",
+    SquareFeet: "3,000 sqft",
+    Status: "On Sale",
+    YearBuilt: 2018,
+    Bathrooms: 3,
+  },
+  {
+    id: 10,
+    lat: 34.042,
+    lng: -118.238,
+    Title: "Eco-Friendly Modular House",
+    Distance: "1.7 miles",
+    Bedrooms: 2,
+    Price: "$390,000",
+    Acreage: "20 acres",
+    SquareFeet: "2,000 sqft",
+    Status: "On Sale",
+    YearBuilt: 2022,
+    Bathrooms: 2,
   },
 ];
-
-type Property = {
-  id: number;
-  lat: number;
-  lng: number;
-  price: string;
-  beds: number;
-  baths: number;
-  status: string;
-};
 
 export default function GoogleMapComponent() {
   const { isLoaded } = useJsApiLoader({
@@ -111,7 +195,7 @@ export default function GoogleMapComponent() {
   // ✅ Filter properties that are inside the polygon
   const polygon = new window.google.maps.Polygon({ paths: polygonCoords });
 
-  const filteredProperties = allProperties.filter((property) =>
+  const filteredProperties = data.filter((property) =>
     window.google.maps.geometry.poly.containsLocation(
       new window.google.maps.LatLng(property.lat, property.lng),
       polygon
@@ -161,9 +245,13 @@ export default function GoogleMapComponent() {
                 onMouseLeave={() => setSelected(null)}
                 className="relative cursor-pointer transform -translate-x-1/2 -translate-y-full w-16"
               >
-                <div className="px-3 py-1.5 w-full bg-white hover:bg-[#F6C002] shadow-md font-bold hover:font-normal text-center transition-all duration-200 relative">
-                  <span className="text-sm text-gray-800 whitespace-nowrap">
-                    {property.price.replace("$", "").replace(",000", "K")}
+                <div
+                  className={`px-3 py-1.5 w-full ${
+                    property.Status === "Sold" ? "bg-[#F6C002]" : "bg-red-500"
+                  } hover:bg-green-400 shadow-md font-bold hover:font-normal text-center transition-all duration-200 relative text-white`}
+                >
+                  <span className="text-sm whitespace-nowrap">
+                    {property.Price.replace("$", "").replace(",000", "K")}
                   </span>
                 </div>
                 <div
@@ -181,12 +269,18 @@ export default function GoogleMapComponent() {
             options={{ pixelOffset: new window.google.maps.Size(0, -30) }}
             onCloseClick={() => setSelected(null)}
           >
-            <div className="text-sm flex flex-col gap-2 items-center w-32">
-              <strong className="font-bold text-lg">{selected.price}</strong>
-              <div className="flex items-center justify-center gap-2 text-gray-500">
-                {selected.beds} Beds | {selected.baths} Baths
+            <div className={`flex flex-col gap-2 items-center w-40`}>
+              <strong className="font-bold text-lg">{selected.Price}</strong>
+              <div className="flex items-center justify-center gap-2 text-gray-500 text-xs">
+                {selected.Bedrooms} Beds | {selected.Bathrooms} Baths |{" "}
+                {selected.SquareFeet}
               </div>
-              <span className="font-semibold">{selected.status}</span>
+              <div className="flex items-center gap-1 text-sm">
+                <span className="font-semibold">{selected.Status}</span>
+                {selected.Status === "Sold" && (
+                  <span>({selected.DateSold?.toLocaleDateString()})</span>
+                )}
+              </div>
             </div>
           </InfoWindow>
         )}

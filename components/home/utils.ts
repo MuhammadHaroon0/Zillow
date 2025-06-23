@@ -9,7 +9,6 @@ export const formatAddress = (address: any) => {
 
 export const formatPropertyValue = (property: any, columnId: string) => {
   const value = property[columnId];
-  console.log(property["Price"]);
   switch (columnId) {
     case "Address":
       return formatAddress(value);
@@ -30,10 +29,10 @@ export const formatPropertyValue = (property: any, columnId: string) => {
 
 export const columns = [
   { id: "Bedrooms", label: "Bedrooms" },
-  { id: "Price", label: "Listed For" },
+  { id: "Price", label: "Price(Listed/Sold)" },
   { id: "LivingArea", label: "Square Feet" },
   { id: "Bathrooms", label: "Bathrooms" },
   // { id: "YearBuilt", label: "Year Built" },
-  { id: "Status", label: "Status" },
+  { id: "Status", label: "Status(On Sale/Sold)" },
   { id: "Address", label: "Address" },
 ] as const;
