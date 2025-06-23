@@ -11,8 +11,8 @@ import {
   price,
   size,
   listingStatus,
-  yearBuilt,
   distance,
+  acreage,
 } from "@/lib/filterItems";
 
 const Navbar = () => {
@@ -26,6 +26,7 @@ const Navbar = () => {
     listingStatus: "ForSale",
     buildYearMin: "2000",
     buildYearMax: "2025",
+    lotSize: "10,890",
   });
 
   const [draftYearBuilt, setDraftYearBuilt] = useState({
@@ -36,21 +37,21 @@ const Navbar = () => {
 
   const handleSearch = () => {
     router.push(
-      `?searchedTerm=${searchedTerm}&listingStatus=${filter.listingStatus}&bedsMin=${filter.bedrooms}&priceMin=${filter.price}&sqftMin=${filter.size}&buildYearMin=${filter.buildYearMin}&buildYearMax=${filter.buildYearMax}`
+      `?searchedTerm=${searchedTerm}&listingStatus=${filter.listingStatus}&bedsMin=${filter.bedrooms}&priceMin=${filter.price}&sqftMin=${filter.size}&buildYearMin=${filter.buildYearMin}&buildYearMax=${filter.buildYearMax}&lotSize=${filter.lotSize}`
     );
     queryClient.invalidateQueries({ queryKey: ["zillow"] });
   };
 
   useEffect(() => {
     router.push(
-      `?searchedTerm=${searchedTerm}&listingStatus=${filter.listingStatus}&bedsMin=${filter.bedrooms}&priceMin=${filter.price}&sqftMin=${filter.size}&buildYearMin=${filter.buildYearMin}&buildYearMax=${filter.buildYearMax}`
+      `?searchedTerm=${searchedTerm}&listingStatus=${filter.listingStatus}&bedsMin=${filter.bedrooms}&priceMin=${filter.price}&sqftMin=${filter.size}&buildYearMin=${filter.buildYearMin}&buildYearMax=${filter.buildYearMax}&lotSize=${filter.lotSize}`
     );
     queryClient.invalidateQueries({ queryKey: ["zillow"] });
   }, [filter]);
 
   return (
-    <div className="w-full min-h-20 py-4 shadow-lg shadow-[#D3D3D3] border-[#D3D3D3] border-b flex md:flex-row flex-col items-center md:justify-between justify-center md:gap-0 gap-4 px-6">
-      <div className="md:w-[40%] w-full h-full items-center flex md:pr-3">
+    <div className="w-full min-h-20 py-4 shadow-lg shadow-[#D3D3D3] border-[#D3D3D3] border-b flex md:flex-row flex-col items-center md:justify-between justify-center px-6">
+      <div className="md:w-[35%] w-full h-full items-center flex md:pr-3">
         <div className="w-full border border-[#D3D3D3] rounded-md flex items-center overflow-hidden">
           <input
             value={searchedTerm}
@@ -74,7 +75,7 @@ const Navbar = () => {
           </div>
         </div>
       </div>
-      <div className="md:w-[60%] w-full flex items-center flex-wrap gap-3 relative">
+      <div className="md:w-[65%] w-full flex items-center flex-wrap gap-3 relative">
         <Dropdown
           title="Distance"
           items={distance}
@@ -97,7 +98,7 @@ const Navbar = () => {
           }}
         />
         <Dropdown
-          title="Size"
+          title="Square Feet"
           items={size}
           onChange={(value) => {
             setFilter({ ...filter, size: value });
@@ -108,6 +109,13 @@ const Navbar = () => {
           items={listingStatus}
           onChange={(value) => {
             setFilter({ ...filter, listingStatus: value });
+          }}
+        />
+        <Dropdown
+          title="Acreage"
+          items={acreage}
+          onChange={(value) => {
+            setFilter({ ...filter, lotSize: value });
           }}
         />
         {/* <Dropdown
@@ -121,7 +129,7 @@ const Navbar = () => {
           name="buildYearMin"
           type="number"
           value={draftYearBuilt.buildYearMin}
-          className="w-28 h-9 border border-[#D3D3D3] rounded-md px-4"
+          className="w-28 h-9 border border-[#D3D3D3] rounded-md px-4 text-sm"
           onChange={(e) =>
             setDraftYearBuilt((prev) => ({
               ...prev,
@@ -139,7 +147,7 @@ const Navbar = () => {
           name="buildYearMax"
           type="number"
           value={draftYearBuilt.buildYearMax}
-          className="w-28 h-9 border border-[#D3D3D3] rounded-md px-4"
+          className="w-28 h-9 border border-[#D3D3D3] rounded-md px-4 text-sm"
           onChange={(e) =>
             setDraftYearBuilt((prev) => ({
               ...prev,

@@ -10,6 +10,7 @@ export async function GET(request: Request) {
   const sqftMin = searchParams.get("sqftMin");
   const buildYearMin = searchParams.get("buildYearMin");
   const buildYearMax = searchParams.get("buildYearMax");
+  const lotSize = searchParams.get("lotSize");
 
   const url = process.env.ZILLOW_URL as string;
   const apiKey = process.env.ZILLOW_API_KEY as string;

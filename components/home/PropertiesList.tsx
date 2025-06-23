@@ -21,6 +21,7 @@ const PropertiesListComponent = () => {
   const sqftMin = searchParams.get("sqftMin");
   const buildYearMin = searchParams.get("buildYearMin");
   const buildYearMax = searchParams.get("buildYearMax");
+  const lotSize = searchParams.get("lotSize");
   const selectedState = useFilterStore((state) => state.selectedState);
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
 
@@ -33,7 +34,7 @@ const PropertiesListComponent = () => {
       const res = await axios.get(
         `/api/search-by-location?searchedTerm=${searchedTerm}&listingStatus=${listingStatus}&bedsMin=${bedsMin}&priceMin=${
           priceMin || "50000"
-        }&sqftMin=${sqftMin}&buildYearMin=${buildYearMin}&buildYearMax=${buildYearMax}`
+        }&sqftMin=${sqftMin}&buildYearMin=${buildYearMin}&buildYearMax=${buildYearMax}&lotSize=${lotSize}`
       );
       return res.data;
     },
@@ -48,6 +49,7 @@ const PropertiesListComponent = () => {
       sqftMin,
       buildYearMin,
       buildYearMax,
+      lotSize,
     ],
     staleTime: 0,
   });
