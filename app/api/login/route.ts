@@ -6,13 +6,8 @@ type User = {
   password: string;
 };
 
-const users: User[] = [
-  { id: "a7d93f4x", email: "user1@gmail.com", password: "password1" },
-  { id: "k2p18zqm", email: "user2@gmail.com", password: "password2" },
-  { id: "t9w64vne", email: "user3@gmail.com", password: "password3" },
-  { id: "m0r37bxa", email: "user4@gmail.com", password: "password4" },
-  { id: "z1q82cyd", email: "user5@gmail.com", password: "password5" },
-];
+const users = process.env.ZILLOW_USERS as unknown as string;
+const parsedUsers = JSON.parse(users) as User[];
 
 export async function POST(req: NextRequest) {
   const { email, password } = await req.json();
@@ -26,7 +21,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const user = users.find(
+  const user = parsedUsers?.find(
     (u) => u?.email === email && u?.password === password
   );
 

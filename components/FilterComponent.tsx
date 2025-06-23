@@ -14,11 +14,12 @@ const items = [
   { id: "Distance", label: "Distance" },
   { id: "Bedrooms", label: "Bedrooms" },
   { id: "Price", label: "Price (Listed/Sold)" },
-  { id: "SquareFootage", label: "Square Footage" },
+  { id: "LivingArea", label: "Square Footage" },
   { id: "Status", label: "Status (On Sale/Sold)" },
-  { id: "YearBuilt", label: "Year Built" },
+  // { id: "YearBuilt", label: "Year Built" },
   { id: "Bathrooms", label: "Bathrooms" },
   { id: "Size", label: "Size" },
+  { id: "Address", label: "Address" },
 ] as const;
 
 export const FilterComponent = () => {

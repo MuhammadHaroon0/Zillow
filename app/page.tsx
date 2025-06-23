@@ -1,4 +1,3 @@
-"use client";
 import PropertiesList from "@/components/home/PropertiesList";
 import Navbar from "@/components/Navbar";
 

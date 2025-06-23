@@ -11,10 +11,11 @@ export const useFilterStore = create<FilterState>()(
   persist(
     (set, get) => ({
       selectedState: [
-        "Distance",
+        "Address",
         "Bedrooms",
         "Price",
-        "SquareFootage",
+        "LivingArea",
+        "Bathrooms",
         "Status",
       ],
 
@@ -29,7 +30,16 @@ export const useFilterStore = create<FilterState>()(
       isSelected: (id) => get().selectedState.includes(id),
     }),
     {
-      name: "filter-storage", // Key in localStorage
+      name: "filter-storage",
+      storage: {
+        getItem: (name) => {
+          const str = sessionStorage.getItem(name);
+          return str ? JSON.parse(str) : null;
+        },
+        setItem: (name, value) =>
+          sessionStorage.setItem(name, JSON.stringify(value)),
+        removeItem: (name) => sessionStorage.removeItem(name),
+      },
     }
   )
 );
