@@ -40,7 +40,9 @@ export async function GET(request: Request) {
         "&buildYearMin=" +
         buildYearMin +
         "&buildYearMax=" +
-        buildYearMax,
+        buildYearMax +
+        "&lotSize=" +
+        lotSize,
       {
         headers: {
           "x-rapidapi-key": apiKey,
@@ -62,6 +64,10 @@ export async function GET(request: Request) {
         Bathrooms: home.bathrooms,
         YearBuilt: home.yearBuilt,
         Status: home.listingStatus,
+        latitude: home.latitude,
+        longitude: home.longitude,
+        dateSold: home.dateSold,
+        Distance: 0,
       })),
     };
 

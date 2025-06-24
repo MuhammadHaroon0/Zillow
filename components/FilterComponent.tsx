@@ -18,7 +18,6 @@ const items = [
   { id: "Status", label: "Status (On Sale/Sold)" },
   // { id: "YearBuilt", label: "Year Built" },
   { id: "Bathrooms", label: "Bathrooms" },
-  { id: "Size", label: "Size" },
   { id: "Address", label: "Address" },
 ] as const;
 

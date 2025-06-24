@@ -14,8 +14,6 @@ const SelectedPropertyDetails = ({
   selectedState,
   columns,
 }: SelectedPropertyDetailsProps) => {
-  console.log(selectedProperty);
-
   return (
     <div className="w-full flex flex-col mb-4 md:px-2 px-1  border-b-2 border-[#E5E5E5] overflow-x-auto scrollbar-hide">
       <div className="w-full flex items-center justify-between min-w-[300px]">
