@@ -17,6 +17,7 @@ export const useFilterStore = create<FilterState>()(
         "LivingArea",
         "Bathrooms",
         "Status",
+        "Distance",
       ],
 
       toggleSelection: (id, checked) => {

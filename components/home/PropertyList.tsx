@@ -85,6 +85,7 @@ const PropertyList = ({
                     onClick={() => handleSort(columnId)}
                   >
                     {columns.find((col) => col.id === columnId)?.label}
+
                     <FaCaretDown
                       className={`ml-1 transition-transform duration-200 ${
                         sortField === columnId && sortDirection === "desc"
@@ -95,12 +96,15 @@ const PropertyList = ({
                   </div>
                 </th>
               ))}
+              <th className="text-sm text-black font-medium text-center w-26">
+                View Built Year
+              </th>
             </tr>
           </thead>
         </table>
       </div>
       <div className="w-full h-full">
-        {sortedData.map((property: any, index: number) => (
+        {sortedData?.map((property: any, index: number) => (
           <PropertyCard
             key={property.zpid || index}
             property={property}

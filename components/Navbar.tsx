@@ -26,7 +26,7 @@ const Navbar = () => {
     listingStatus: "ForSale",
     buildYearMin: "2000",
     buildYearMax: "2025",
-    lotSize: "10,890",
+    lotSize: "10890",
   });
 
   const [draftYearBuilt, setDraftYearBuilt] = useState({
@@ -129,6 +129,7 @@ const Navbar = () => {
           name="buildYearMin"
           type="number"
           value={draftYearBuilt.buildYearMin}
+          placeholder="Min Year"
           className="w-28 h-9 border border-[#D3D3D3] rounded-md px-4 text-sm"
           onChange={(e) =>
             setDraftYearBuilt((prev) => ({
@@ -147,6 +148,7 @@ const Navbar = () => {
           name="buildYearMax"
           type="number"
           value={draftYearBuilt.buildYearMax}
+          placeholder="Max Year"
           className="w-28 h-9 border border-[#D3D3D3] rounded-md px-4 text-sm"
           onChange={(e) =>
             setDraftYearBuilt((prev) => ({

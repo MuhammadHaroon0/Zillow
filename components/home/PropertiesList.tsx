@@ -9,11 +9,14 @@ import React from "react";
 import SelectedPropertyDetails from "./SelectedPropertyDetails";
 import PropertyList from "./PropertyList";
 import { columns } from "./utils";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import PageLoader from "../ui/PageLoader";
+import { usePropertyData } from "@/store/propertyData";
 
 const PropertiesListComponent = () => {
+  const { propertyData, setPropertyData } = usePropertyData();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const searchedTerm = searchParams.get("searchedTerm");
   const listingStatus = searchParams.get("listingStatus");
   const bedsMin = searchParams.get("bedsMin");
@@ -58,11 +61,28 @@ const PropertiesListComponent = () => {
     if (propertyDataByLocation?.nearbyHomes?.length > 0 && !selectedProperty) {
       setSelectedProperty(propertyDataByLocation.nearbyHomes[0]);
     }
+
+    if (propertyDataByLocation?.nearbyHomes?.length > 0) {
+      setPropertyData(propertyDataByLocation);
+    }
+
+    if (propertyDataByLocation?.nearbyHomes?.length > 0) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set(
+        "lat",
+        propertyDataByLocation?.nearbyHomes[0].latitude.toString()
+      );
+      params.set(
+        "lng",
+        propertyDataByLocation?.nearbyHomes[0].longitude.toString()
+      );
+      router.push(`?${params.toString()}`);
+    }
   }, [selectedProperty, searchedTerm, propertyDataByLocation]);
 
   if (isLoading) {
     return (
-      <div className="w-full flex items-center justify-center p-8">
+      <div className="w-full flex items-center justify-center p-8  h-[80vh]">
         <PageLoader />
       </div>
     );
@@ -99,7 +119,7 @@ const PropertiesListComponent = () => {
 
         {/* Property List */}
         <PropertyList
-          properties={propertyDataByLocation.nearbyHomes}
+          properties={propertyData.nearbyHomes}
           selectedState={selectedState}
           onPropertySelect={setSelectedProperty}
         />

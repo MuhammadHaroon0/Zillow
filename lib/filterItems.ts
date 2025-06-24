@@ -33,7 +33,7 @@ export const size = [
 
 export const listingStatus = [
   { id: "ForSale", label: "On Sale" },
-  { id: "Sold", label: "Sold" },
+  { id: "RecentlySold", label: "Sold" },
   { id: "ForRent", label: "On Rent" },
 ];
 
@@ -45,8 +45,8 @@ export const distance = [
 ];
 
 export const acreage = [
-  { id: "435,600", label: "10 acres" },
-  { id: "871,200", label: "20 acres" },
-  { id: "2,178,000", label: "50 acres" },
-  { id: "4,356,000", label: "100 acres" },
+  { id: "435600", label: "10 acres" },
+  { id: "871200", label: "20 acres" },
+  { id: "2178000", label: "50 acres" },
+  { id: "4356000", label: "100 acres" },
 ];
