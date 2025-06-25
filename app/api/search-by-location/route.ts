@@ -42,7 +42,7 @@ export async function GET(request: Request) {
         buildYearMin +
         "&buildYearMax=" +
         buildYearMax +
-        "&lotSize=" +
+        "&lotSizeMin=" +
         lotSize,
       {
         headers: {
