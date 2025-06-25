@@ -17,14 +17,13 @@ const PropertiesListComponent = () => {
   const { propertyData, setPropertyData } = usePropertyData();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const searchedTerm = searchParams.get("searchedTerm");
-  const listingStatus = searchParams.get("listingStatus");
-  const bedsMin = searchParams.get("bedsMin");
-  const priceMin = searchParams.get("priceMin");
-  const sqftMin = searchParams.get("sqftMin");
-  const buildYearMin = searchParams.get("buildYearMin");
-  const buildYearMax = searchParams.get("buildYearMax");
-  const lotSize = searchParams.get("lotSize");
+
+  const query = JSON.parse(
+    decodeURIComponent(searchParams.get("query") || "{}")
+  );
+
+  const { searchedTerm, listingType, filterState } = query;
+
   const selectedState = useFilterStore((state) => state.selectedState);
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
 
@@ -35,25 +34,12 @@ const PropertiesListComponent = () => {
   } = useQuery({
     queryFn: async () => {
       const res = await axios.get(
-        `/api/search-by-location?searchedTerm=${searchedTerm}&listingStatus=${listingStatus}&bedsMin=${bedsMin}&priceMin=${
-          priceMin || "50000"
-        }&sqftMin=${sqftMin}&buildYearMin=${buildYearMin}&buildYearMax=${buildYearMax}&lotSize=${lotSize}`
+        `/api/search-by-location?searchedTerm=${searchedTerm}&listingStatus=${listingType}&bedsMin=${filterState.beds.min}&priceMin=${filterState.price.min}&sqftMin=${filterState.sqftMin.min}&buildYearMin=${filterState.buildYear.min}&buildYearMax=${filterState.buildYear.max}&lotSize=${filterState.lotSize.min}`
       );
       return res.data;
     },
-    enabled: !!searchedTerm && !!listingStatus,
-    queryKey: [
-      "zillow",
-      searchedTerm,
-      "location",
-      listingStatus,
-      bedsMin,
-      priceMin,
-      sqftMin,
-      buildYearMin,
-      buildYearMax,
-      lotSize,
-    ],
+    enabled: !!searchedTerm && !!listingType,
+    queryKey: ["zillow", searchedTerm, "location", listingType, filterState],
     staleTime: 0,
   });
 
@@ -80,14 +66,6 @@ const PropertiesListComponent = () => {
     }
   }, [selectedProperty, searchedTerm, propertyDataByLocation]);
 
-  if (isLoading) {
-    return (
-      <div className="w-full flex items-center justify-center p-8  h-[80vh]">
-        <PageLoader />
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="w-full flex items-center justify-center p-8 text-red-500">
@@ -96,9 +74,17 @@ const PropertiesListComponent = () => {
     );
   }
 
+  if (isLoading) {
+    return (
+      <div className="w-full flex items-center justify-center p-8 h-[80vh]">
+        <PageLoader />
+      </div>
+    );
+  }
+
   if (!propertyDataByLocation?.nearbyHomes || !selectedProperty) {
     return (
-      <div className="w-full flex items-center justify-center p-8">
+      <div className="w-full flex items-center justify-center p-8 ">
         No properties found
       </div>
     );
@@ -110,7 +96,6 @@ const PropertiesListComponent = () => {
         <GoogleMapComponent />
       </div>
       <div className="md:w-[60%] w-full md:h-[82vh] h-[65vh] pb-4">
-        {/* Selected Property Details */}
         <SelectedPropertyDetails
           selectedProperty={selectedProperty}
           selectedState={selectedState}

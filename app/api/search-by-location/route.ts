@@ -12,6 +12,8 @@ export async function GET(request: Request) {
   const buildYearMax = searchParams.get("buildYearMax");
   const lotSize = searchParams.get("lotSize");
 
+  console.log(searchedTerm, listingStatus);
+
   const url = process.env.ZILLOW_URL as string;
   const apiKey = process.env.ZILLOW_API_KEY as string;
 
@@ -30,7 +32,6 @@ export async function GET(request: Request) {
         searchedTerm +
         "&status_type=" +
         listingStatus +
-        "&home_type=Houses" +
         "&bedsMin=" +
         bedsMin +
         "&minPrice=" +

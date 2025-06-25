@@ -15,25 +15,20 @@ interface DropdownProps {
   title: string;
   items: { id: string; label: string }[];
   onChange: (value: string) => void;
+  value: string;
 }
 
 export const Dropdown: React.FC<DropdownProps> = ({
   title,
   items,
   onChange,
+  value,
 }) => {
-  const [selectedItem, setSelectedItem] = React.useState(
-    items[0] || {
-      id: "",
-      label: "",
-    }
-  );
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="font-normal">
-          {selectedItem.label}
+          {items.find((item) => item.id === value)?.label}
           <RiArrowDropDownLine />
         </Button>
       </DropdownMenuTrigger>
@@ -41,17 +36,10 @@ export const Dropdown: React.FC<DropdownProps> = ({
         <DropdownMenuLabel>{title}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuRadioGroup
-          value={selectedItem.id}
-          onValueChange={(value) =>
-            setSelectedItem(
-              items?.find((item) => item.id === value) || {
-                id: "",
-                label: "",
-              }
-            )
-          }
+          value={value}
+          onValueChange={(value) => onChange(value)}
         >
-          {items.map((item) => (
+          {items?.map((item) => (
             <DropdownMenuRadioItem
               key={item.id}
               value={item.id}

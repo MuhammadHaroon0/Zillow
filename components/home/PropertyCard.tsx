@@ -19,7 +19,6 @@ const PropertyCard = ({
   onClick,
 }: PropertyCardProps) => {
   const [selectedPropertyZipId, setSelectedPropertyZipId] = useState("");
-  console.log(selectedPropertyZipId);
 
   const { data: propertyDetail, isLoading } = useQuery({
     queryFn: async () => {
