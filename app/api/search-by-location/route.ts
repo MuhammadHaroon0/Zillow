@@ -1,3 +1,4 @@
+import { getFullAddress } from "@/lib/utils";
 import axios from "axios";
 import { NextResponse } from "next/server";
 
@@ -41,9 +42,9 @@ export async function GET(request: Request) {
         "&buildYearMin=" +
         buildYearMin +
         "&buildYearMax=" +
-        buildYearMax +
-        "&lotSizeMin=" +
-        lotSize,
+        buildYearMax,
+        // "&lotSizeMin=" +
+        // lotSize,
       {
         headers: {
           "x-rapidapi-key": apiKey,
@@ -53,7 +54,43 @@ export async function GET(request: Request) {
     );
 
     const data = response.data;
+    //check if search is done by address and only one property is returned
+    if(data && !Array.isArray(data) && typeof data === "object" && Object.keys(data).length === 1 && data.hasOwnProperty("zpid") && data.zpid){
+      const response = await axios.get(
+        url +
+          "/property" +
+          "?zpid=" + 
+          data.zpid,
+        {
+          headers: {
+            "x-rapidapi-key": apiKey,
+            "x-rapidapi-host": "zillow-com1.p.rapidapi.com",
+          },
+        }
+      );
+      const property = response.data;
+      const refinedData = {
+        nearbyHomes:[
+          {
+            zpid: property.zpid,
+            Address: getFullAddress(property.address),
+            Price: property.price,
+            LivingArea: property.livingAreaValue,
+            image: property.imgSrc,
+            Bedrooms: property.bedrooms,
+            Bathrooms: property.bathrooms,
+            YearBuilt: property.yearBuilt,
+            Status: property.homeStatus,
+            latitude: property.latitude,
+            longitude: property.longitude,
+            dateSold: property.dateSold,
+            Distance: 0,
+          }
+        ]
+      };
 
+      return NextResponse.json(refinedData, { status: 200 });
+    }
     const refinedData = {
       nearbyHomes: data?.props?.map((home: any) => ({
         zpid: home.zpid,
