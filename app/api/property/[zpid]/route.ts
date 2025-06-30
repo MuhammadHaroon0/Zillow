@@ -4,7 +4,7 @@ import axios from "axios";
 // Next.js API route to fetch full details for a single property from Zillow by zpid.
 // Used for main card, detailed view, or map popup.
 export async function GET(
-  _: any,
+  request: NextRequest,
   { params }: { params: { zpid: string } }
 ) {
   const zpid = params.zpid;
