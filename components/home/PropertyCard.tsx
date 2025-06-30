@@ -10,6 +10,7 @@ interface PropertyCardProps {
   selectedState: string[];
   columns: readonly { readonly id: string; readonly label: string }[];
   onClick: () => void;
+  setShowSelectedPropertyOnMap: (property: any) => void;
 }
 
 const PropertyCard = ({
@@ -17,6 +18,7 @@ const PropertyCard = ({
   selectedState,
   columns,
   onClick,
+  setShowSelectedPropertyOnMap,
 }: PropertyCardProps) => {
   const [selectedPropertyZipId, setSelectedPropertyZipId] = useState("");
 
@@ -31,13 +33,21 @@ const PropertyCard = ({
     queryKey: ["property-detail", selectedPropertyZipId],
   });
 
+  const setLatLng = (property: any) => {
+    if (property?.latitude && property?.longitude) {
+      setShowSelectedPropertyOnMap({
+        lat: Number(property?.latitude),
+        lng: Number(property?.longitude),
+      });
+    }
+  };
   return (
     <div
       className="w-fit py-3 border border-[#E5E5E5] rounded-lg my-2 hover:border-black cursor-default"
       onClick={onClick}
     >
       <table className="w-full table-fixed">
-        <tbody>
+        <tbody onClick={() => setLatLng(property)}>
           <tr>
             {selectedState.map((columnId) => (
               <td key={columnId} className="text-sm text-center px-2 py-1 w-26">
@@ -60,7 +70,10 @@ const PropertyCard = ({
                 </div>
               ) : (
                 <Button
-                  onClick={() => setSelectedPropertyZipId(property?.zpid)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPropertyZipId(property?.zpid);
+                  }}
                   variant="outline"
                   className="w-full"
                 >

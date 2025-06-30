@@ -16,6 +16,8 @@ interface DropdownProps {
   items: { id: string; label: string }[];
   onChange: (value: string) => void;
   value: string;
+  label?: string;
+  placeholder?: string;
 }
 
 export const Dropdown: React.FC<DropdownProps> = ({
@@ -23,12 +25,13 @@ export const Dropdown: React.FC<DropdownProps> = ({
   items,
   onChange,
   value,
+  placeholder,
 }) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="font-normal">
-          {items.find((item) => item.id === value)?.label}
+          {items.find((item) => item.id === value)?.label || placeholder}
           <RiArrowDropDownLine />
         </Button>
       </DropdownMenuTrigger>

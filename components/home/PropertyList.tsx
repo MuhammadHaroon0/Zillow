@@ -9,12 +9,14 @@ interface PropertyListProps {
   properties: any[];
   selectedState: string[];
   onPropertySelect: (property: any) => void;
+  setShowSelectedPropertyOnMap: (property: any) => void;
 }
 
 const PropertyList = ({
   properties,
   selectedState,
   onPropertySelect,
+  setShowSelectedPropertyOnMap,
 }: PropertyListProps) => {
   const [sortField, setSortField] = useState("Distance");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -106,11 +108,12 @@ const PropertyList = ({
       <div className="w-full h-full">
         {sortedData?.map((property: any, index: number) => (
           <PropertyCard
-            key={property.zpid || index}
+            key={index}
             property={property}
             selectedState={selectedState}
             columns={columns}
             onClick={() => onPropertySelect(property)}
+            setShowSelectedPropertyOnMap={setShowSelectedPropertyOnMap}
           />
         ))}
       </div>

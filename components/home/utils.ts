@@ -10,19 +10,19 @@ export const formatAddress = (address: any) => {
 export const formatPropertyValue = (property: any, columnId: string) => {
   const value = property[columnId];
   switch (columnId) {
-    case "Address":
+    case "address":
       return formatAddress(value);
-    case "Price":
-      return value ? `$${value.toLocaleString()}` : "N/A";
-    case "LivingArea":
+    case "bedrooms":
+      return value ? `${value.toLocaleString()}` : "N/A";
+    case "livingArea":
       return value ? `${value.toLocaleString()} sqft` : "N/A";
-    case "Bedrooms":
+    case "bathrooms":
       return value ? value.toString() : "N/A";
-    case "Bathrooms":
+    case "homeStatus":
       return value ? value.toString() : "N/A";
-    case "Distance":
-      return value;
-    case "Status":
+    case "price":
+      return value ? `$${value.toLocaleString()}` : "N/A";
+    case "listingStatus":
       if (value === "RECENTLY_SOLD") {
         return `Sold`;
       } else if (value === "FOR_SALE") {
@@ -33,17 +33,18 @@ export const formatPropertyValue = (property: any, columnId: string) => {
         return `Pending`;
       }
       return value ? value?.replace("_", " ") : "N/A";
+
     default:
       return value;
   }
 };
 
 export const columns = [
-  { id: "Bedrooms", label: "Bedrooms" },
-  { id: "Price", label: "Price(Listed/Sold)" },
-  { id: "LivingArea", label: "Square Feet" },
-  { id: "Bathrooms", label: "Bathrooms" },
-  { id: "Status", label: "Status(On Sale/Sold)" },
-  { id: "Address", label: "Address" },
+  { id: "bedrooms", label: "Bedrooms" },
+  { id: "price", label: "Price(Listed/Sold)" },
+  { id: "livingArea", label: "Square Feet" },
+  { id: "bathrooms", label: "Bathrooms" },
+  { id: "listingStatus", label: "Status(On Sale/Sold)" },
+  { id: "address", label: "Address" },
   { id: "Distance", label: "Distance" },
 ] as const;

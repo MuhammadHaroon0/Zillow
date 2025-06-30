@@ -11,13 +11,12 @@ export const useFilterStore = create<FilterState>()(
   persist(
     (set, get) => ({
       selectedState: [
-        "Address",
-        "Bedrooms",
-        "Price",
-        "LivingArea",
-        "Bathrooms",
-        "Status",
-        "Distance",
+        "address",
+        "bedrooms",
+        "price",
+        "livingArea",
+        "bathrooms",
+        "listingStatus",
       ],
 
       toggleSelection: (id, checked) => {

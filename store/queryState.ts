@@ -6,11 +6,11 @@ interface MapBounds {
 }
 
 interface FilterState {
-  price: { min: string };
-  beds: { min: string };
+  price: string;
+  beds: string;
   buildYear: { min: string; max: string };
-  lotSize: { min: string };
-  sqftMin: { min: string };
+  sqftMin: string;
+  distance: string;
 }
 
 interface QueryState {
@@ -18,24 +18,25 @@ interface QueryState {
   filterState: FilterState;
   searchedTerm: string;
   listingType: string;
+  regionId?: string;
   updateQuery: (key: string, value: any) => void;
   getQueryString: () => string;
 }
 
 const initialState: Omit<QueryState, "updateQuery" | "getQueryString"> = {
   mapBounds: {
-    lat: "45.672362679211",
-    lng: "-122.5991175112",
+    lat: "",
+    lng: "",
   },
   filterState: {
-    price: { min: "1000000" },
-    beds: { min: "4" },
-    buildYear: { min: "2000", max: "2025" },
-    lotSize: { min: "1000" },
-    sqftMin: { min: "1000" },
+    price: "",
+    beds: "",
+    buildYear: { min: "", max: "" },
+    sqftMin: "",
+    distance: "",
   },
-  listingType: "ForSale",
-  searchedTerm: "Vancouver", // Todo:default for now
+  listingType: "",
+  searchedTerm: "",
 };
 
 export const useQueryState = create<QueryState>((set, get) => ({

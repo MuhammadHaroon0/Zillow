@@ -18,69 +18,92 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useDebounce } from "use-debounce";
 import { useQueryState } from "@/store/queryState";
+import PageLoader from "./ui/PageLoader";
+import { Button } from "./ui/button";
+import { usePropertyData } from "@/store/propertyData";
 
 const Navbar = () => {
-  const { getQueryString, updateQuery } = useQueryState();
-  const query = JSON.parse(decodeURIComponent(getQueryString()));
+  const router = useRouter();
 
+  const { getQueryString, updateQuery } = useQueryState();
+  const { setPropertyData, setPriority } = usePropertyData();
+  const query = JSON.parse(decodeURIComponent(getQueryString()));
   const { searchedTerm, listingType, filterState } = query;
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [value] = useDebounce(searchedTerm, 500);
-  const [filter, setFilter] = useState({
-    distance: "2.1",
-    bedrooms: "2",
-    price: "50000",
-    size: "1000",
-    listingStatus: "ForSale",
-    buildYearMin: "2000",
-    buildYearMax: "2025",
-    lotSize: "10890",
-  });
+  const [inputValue, setInputValue] = useState(searchedTerm);
+  const [value] = useDebounce(inputValue, 500);
 
   const [draftYearBuilt, setDraftYearBuilt] = useState({
-    buildYearMin: filter.buildYearMin,
-    buildYearMax: filter.buildYearMax,
+    buildYearMin: filterState.buildYear.min,
+    buildYearMax: filterState.buildYear.max,
   });
-  const router = useRouter();
 
   const handleSearch = () => {
     router.push(`?query=${getQueryString()}`);
     queryClient.invalidateQueries({ queryKey: ["zillow"] });
   };
 
+  const {
+    data: locationSuggestions,
+    isLoading: isLoadingLocationSuggestions,
+    refetch,
+  } = useQuery({
+    queryFn: async () => {
+      const res = await axios.get(
+        `/api/suggestions?q=${value || searchedTerm}`
+      );
+      return res.data;
+    },
+    queryKey: [value],
+    enabled: !!value,
+    staleTime: 0,
+  });
+
   useEffect(() => {
     handleSearch();
   }, [
     listingType,
-    filterState.beds.min,
-    filterState.price.min,
-    filterState.sqftMin.min,
+    filterState.beds,
+    filterState.price,
+    filterState.sqftMin,
     filterState.buildYear.min,
     filterState.buildYear.max,
-    filterState.lotSize.min,
+    filterState.distance,
+    filterState.lotSize,
   ]);
 
-  const { data: locationSuggestions, isLoading: isLoadingLocationSuggestions } =
-    useQuery({
-      queryFn: async () => {
-        const res = await axios.get(
-          `/api/get-location-suggestion?location=${value}`
-        );
-        return res.data;
+  const setPriorityAndSearch = (priority: "search" | "distance") => {
+    setPriority(priority);
+  };
+
+  const handleClearFilters = () => {
+    updateQuery("filterState", {
+      beds: "",
+      price: "",
+      sqftMin: "",
+      distance: "",
+      buildYear: {
+        min: "",
+        max: "",
       },
-      queryKey: [query.searchedTerm],
-      enabled: !!value,
     });
+    updateQuery("searchedTerm", "");
+    updateQuery("listingType", "");
+    updateQuery("query", "");
+    setDraftYearBuilt({ buildYearMin: "", buildYearMax: "" });
+    setInputValue("");
+    router.replace("/");
+  };
 
   return (
     <div className="w-full min-h-20 py-4 shadow-lg shadow-[#D3D3D3] border-[#D3D3D3] border-b flex md:flex-row flex-col items-center md:justify-between justify-center px-6">
       <div className="md:w-[35%] relative w-full h-full items-center flex md:pr-3">
         <div className="w-full border border-[#D3D3D3] rounded-md flex items-center overflow-hidden">
           <input
-            value={searchedTerm}
+            value={inputValue}
             onChange={(e) => {
-              updateQuery("searchedTerm", e.target.value);
+              setInputValue(e.target.value);
             }}
             onFocus={() => setDropdownOpen(true)}
             onBlur={() => setDropdownOpen(false)}
@@ -100,73 +123,98 @@ const Navbar = () => {
             <IoIosSearch className="text-2xl text-white" />
           </div>
         </div>
-        {dropdownOpen && locationSuggestions?.results?.length > 0 && (
+        {dropdownOpen && (
           <div className="bg-white p-2 absolute top-14 z-10 left-0 w-full max-w-[510px] rounded-md shadow-md">
-            <div className="flex flex-col gap-2">
-              {locationSuggestions?.results?.map((suggestion: any) => (
-                <div
-                  key={suggestion.id}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    updateQuery("searchedTerm", suggestion.display);
-                    setDropdownOpen(false);
-                    setTimeout(() => {
-                      handleSearch();
-                    }, 100);
-                  }}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                  }}
-                  className={`text-sm hover:bg-gray-100 p-2 cursor-pointer rounded-md`}
-                >
-                  {suggestion.display}
-                </div>
-              ))}
-            </div>
+            {isLoadingLocationSuggestions ? (
+              <div className="text-sm text-gray-500 p-2 text-center flex items-center justify-center">
+                <PageLoader width="w-7" height="h-7" />
+              </div>
+            ) : locationSuggestions?.data?.results?.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {locationSuggestions?.data?.results?.map(
+                  (suggestion: any, index: number) => (
+                    <div
+                      key={index}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDropdownOpen(false);
+                        setInputValue(suggestion.display);
+                        updateQuery("searchedTerm", suggestion.display);
+                        setTimeout(() => {
+                          handleSearch();
+                        }, 100);
+                      }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                      }}
+                      className={`text-sm hover:bg-gray-100 p-2 cursor-pointer rounded-md`}
+                    >
+                      {suggestion.display}
+                    </div>
+                  )
+                )}
+              </div>
+            ) : (
+              <div className="text-sm text-gray-500 p-2 text-center">
+                {searchedTerm
+                  ? "No results found"
+                  : "Enter a location to get started"}
+              </div>
+            )}
           </div>
         )}
       </div>
       <div className="md:w-[65%] w-full flex items-center flex-wrap gap-3 relative">
         {/* todo commented for now */}
-        {/* <Dropdown
-          title="Distance"
-          items={distance}
-          value={filter.distance}
-          onChange={(value) => {
-            updateQuery("distance", value);
-          }}
-        /> */}
         <Dropdown
-          title="Min Bedrooms"
-          items={bedrooms}
-          value={filterState.beds.min}
+          title="Distance"
+          placeholder="Distance"
+          items={distance}
+          value={filterState.distance}
           onChange={(value) => {
-            updateQuery("filterState.beds.min", value);
+            updateQuery("filterState.distance", value);
+            setPriorityAndSearch("distance");
+          }}
+        />
+        <Dropdown
+          placeholder="Bedrooms"
+          title="Bedrooms"
+          items={bedrooms}
+          value={filterState.beds}
+          onChange={(value) => {
+            updateQuery("filterState.beds", value);
+            setPriorityAndSearch("search");
           }}
         />
         <Dropdown
           title="Price"
+          placeholder="Price"
           items={price}
-          value={filterState.price.min}
+          value={filterState.price}
           onChange={(value) => {
-            updateQuery("filterState.price.min", value);
+            updateQuery("filterState.price", value);
+            setPriorityAndSearch("search");
           }}
         />
         <Dropdown
           title="Square Feet"
+          placeholder="Square Feet"
           items={size}
-          value={filterState.sqftMin.min}
+          value={filterState.sqftMin}
           onChange={(value) => {
-            updateQuery("filterState.sqftMin.min", value);
+            updateQuery("filterState.sqftMin", value);
+            setPriorityAndSearch("search");
           }}
         />
         <Dropdown
           title="Listing Status"
+          placeholder="Listing Status"
           items={listingStatus}
           value={listingType}
           onChange={(value) => {
             updateQuery("listingType", value);
+            setPriorityAndSearch("search");
           }}
         />
         {/* todo commented for now */}
@@ -178,52 +226,66 @@ const Navbar = () => {
             updateQuery("buildYearMin", value);
           }}
         /> */}
-        <input
-          name="buildYearMin"
-          type="number"
-          value={draftYearBuilt.buildYearMin}
-          placeholder="Min Year"
-          className="w-28 h-9 border border-[#D3D3D3] rounded-md px-4 text-sm"
-          onChange={(e) =>
-            setDraftYearBuilt((prev) => ({
-              ...prev,
-              buildYearMin: e.target.value,
-            }))
-          }
-          onBlur={() =>
-            updateQuery(
-              "filterState.buildYear.min",
-              draftYearBuilt.buildYearMin
-            )
-          }
-        />
-        <input
-          name="buildYearMax"
-          type="number"
-          value={draftYearBuilt.buildYearMax}
-          placeholder="Max Year"
-          className="w-28 h-9 border border-[#D3D3D3] rounded-md px-4 text-sm"
-          onChange={(e) =>
-            setDraftYearBuilt((prev) => ({
-              ...prev,
-              buildYearMax: e.target.value,
-            }))
-          }
-          onBlur={() =>
-            updateQuery(
-              "filterState.buildYear.max",
-              draftYearBuilt.buildYearMax
-            )
-          }
-        />
-        {/* <Dropdown
-          title="Year Built Max"
-          items={yearBuilt}
-          onChange={(value) => {
-            setFilter({ ...filter, buildYearMax: value });
-          }}
-        /> */}
-        <div className="flex items-center justify-center md:absolute top-0 right-0">
+        <div className="flex items-center gap-1">
+          <input
+            name="buildYearMin"
+            type="number"
+            value={draftYearBuilt.buildYearMin}
+            placeholder="Min Year"
+            className="w-28 h-9 border border-[#D3D3D3] rounded-md px-4 text-sm"
+            onChange={(e) => {
+              setDraftYearBuilt((prev) => ({
+                ...prev,
+                buildYearMin: e.target.value,
+              }));
+              setPriorityAndSearch("search");
+            }}
+            onBlur={() =>
+              updateQuery(
+                "filterState.buildYear.min",
+                draftYearBuilt.buildYearMin
+              )
+            }
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                updateQuery(
+                  "filterState.buildYear.min",
+                  draftYearBuilt.buildYearMin
+                );
+              }
+            }}
+          />
+          <span className="text-lg text-gray-500">-</span>
+          <input
+            name="buildYearMax"
+            type="number"
+            value={draftYearBuilt.buildYearMax}
+            placeholder="Max Year"
+            className="w-28 h-9 border border-[#D3D3D3] rounded-md px-4 text-sm"
+            onChange={(e) => {
+              setDraftYearBuilt((prev) => ({
+                ...prev,
+                buildYearMax: e.target.value,
+              }));
+              setPriorityAndSearch("search");
+            }}
+            onBlur={() =>
+              updateQuery(
+                "filterState.buildYear.max",
+                draftYearBuilt.buildYearMax
+              )
+            }
+          />
+        </div>
+        <div className="flex items-center justify-center">
+          <Button
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+            onClick={handleClearFilters}
+          >
+            Clear Filters
+          </Button>
+        </div>
+        <div className="flex items-center justify-center ">
           <FilterComponent />
         </div>
       </div>

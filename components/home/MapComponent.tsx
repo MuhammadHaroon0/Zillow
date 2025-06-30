@@ -26,7 +26,11 @@ interface Property {
   [key: string]: any;
 }
 
-export default function GoogleMapComponent() {
+export default function GoogleMapComponent({
+  showSelectedPropertyOnMap,
+}: {
+  showSelectedPropertyOnMap: any;
+}) {
   const { propertyData } = usePropertyData();
   const mapRef = useRef<google.maps.Map | null>(null);
 
@@ -34,25 +38,28 @@ export default function GoogleMapComponent() {
   const router = useRouter();
 
   const center = {
-    lat: propertyData?.nearbyHomes[0]?.latitude || 0,
-    lng: propertyData?.nearbyHomes[0]?.longitude || 0,
+    lat: propertyData[0]?.latitude || 0,
+    lng: propertyData[0]?.longitude || 0,
   };
 
   const [mapCenter, setMapCenter] = useState(center);
 
   // Update map center when propertyData changes
   useEffect(() => {
-    if (
-      propertyData?.nearbyHomes?.[0]?.latitude &&
-      propertyData?.nearbyHomes?.[0]?.longitude
-    ) {
+    if (showSelectedPropertyOnMap) {
+      setMapCenter(showSelectedPropertyOnMap);
+    }
+  }, [showSelectedPropertyOnMap]);
+
+  useEffect(() => {
+    if (propertyData?.[0]?.latitude && propertyData?.[0]?.longitude) {
       const newCenter = {
         lat: searchParams.get("lat")
           ? parseFloat(searchParams.get("lat") || "0")
-          : propertyData.nearbyHomes[0].latitude,
+          : propertyData[0].latitude,
         lng: searchParams.get("lng")
           ? parseFloat(searchParams.get("lng") || "0")
-          : propertyData.nearbyHomes[0].longitude,
+          : propertyData[0].longitude,
       };
       setMapCenter(newCenter);
     }
@@ -92,10 +99,9 @@ export default function GoogleMapComponent() {
   }, [polygonCoords, isLoaded]);
 
   const filteredProperties = useMemo(() => {
-    if (!polygon || !propertyData?.nearbyHomes)
-      return propertyData?.nearbyHomes || [];
+    if (!polygon || !propertyData) return propertyData || [];
 
-    return propertyData.nearbyHomes.filter((property: Property) => {
+    return propertyData?.filter((property: Property) => {
       if (!property.latitude || !property.longitude) return false;
 
       return window.google.maps.geometry.poly.containsLocation(
@@ -103,12 +109,12 @@ export default function GoogleMapComponent() {
         polygon
       );
     });
-  }, [polygon, propertyData?.nearbyHomes]);
+  }, [polygon, propertyData]);
+
+  console.log(showSelectedPropertyOnMap);
 
   const propertiesToShow =
-    filteredProperties.length > 0
-      ? filteredProperties
-      : propertyData?.nearbyHomes || [];
+    filteredProperties.length > 0 ? filteredProperties : propertyData || [];
 
   if (!isLoaded) return <div>Loading map...</div>;
 
@@ -171,14 +177,14 @@ export default function GoogleMapComponent() {
               >
                 <div
                   className={`px-3 py-1.5 w-full ${
-                    property.Status === "RecentlySold"
+                    property.listingStatus === "RECENTLY_SOLD"
                       ? "bg-red-500"
                       : "bg-green-500"
                   } hover:bg-green-400 shadow-md font-bold hover:font-normal text-center transition-all duration-200 relative text-white`}
                 >
                   <span className="text-sm whitespace-nowrap">
-                    {property.Price
-                      ? `$${(property.Price / 1000).toFixed(0)}K`
+                    {property.price
+                      ? `$${(property.price / 1000).toFixed(0)}K`
                       : "N/A"}
                   </span>
                 </div>
@@ -199,24 +205,25 @@ export default function GoogleMapComponent() {
           >
             <div className={`flex flex-col gap-2 items-center w-40`}>
               <strong className="font-bold text-lg">
-                ${selected.Price?.toLocaleString() || "N/A"}
+                ${selected.price?.toLocaleString() || "N/A"}
               </strong>
               <div className="flex items-center justify-center gap-2 text-gray-500 text-xs">
-                {selected.Bedrooms || 0} Beds | {selected.Bathrooms || 0} Baths
+                {selected.bedrooms || 0} Beds | {selected.bathrooms || 0} Baths
                 |{" "}
-                {selected.LivingArea
-                  ? `${selected.LivingArea.toLocaleString()} sqft`
+                {selected.livingArea
+                  ? `${selected.livingArea.toLocaleString()} sqft`
                   : "N/A"}
               </div>
               <div className="flex items-center gap-1 text-sm">
                 <span className="font-semibold">
-                  {selected.Status || "N/A"}
+                  {selected.listingStatus || "N/A"}
                 </span>
-                {selected.Status === "RecentlySold" && selected.dateSold && (
-                  <span className="text-xs text-gray-500">
-                    ({new Date(selected.dateSold).toLocaleDateString()})
-                  </span>
-                )}
+                {selected.listingStatus === "RECENTLY_SOLD" &&
+                  selected.dateSold && (
+                    <span className="text-xs text-gray-500">
+                      ({new Date(selected.dateSold).toLocaleDateString()})
+                    </span>
+                  )}
               </div>
             </div>
           </InfoWindow>
