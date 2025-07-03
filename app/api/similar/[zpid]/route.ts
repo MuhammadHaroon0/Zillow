@@ -25,7 +25,7 @@ export async function GET(
   }
 
   try {
-    const response = await axios.get(url + "/similarProperty", {
+    const response = await axios.get(url + "/similarSales", {
       params: { zpid },
       headers: {
         "x-rapidapi-key": apiKey,
