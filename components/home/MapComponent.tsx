@@ -111,8 +111,6 @@ export default function GoogleMapComponent({
     });
   }, [polygon, propertyData]);
 
-  console.log(showSelectedPropertyOnMap);
-
   const propertiesToShow =
     filteredProperties.length > 0 ? filteredProperties : propertyData || [];
 
@@ -155,8 +153,8 @@ export default function GoogleMapComponent({
         />
 
         {/* Property markers */}
-        {propertiesToShow.map((property: Property) => (
-          <div key={property.zpid}>
+        {propertiesToShow.map((property: Property, index: number) => (
+          <div key={index}>
             <Marker
               position={{ lat: property.latitude, lng: property.longitude }}
               onClick={() => setSelected(property)}

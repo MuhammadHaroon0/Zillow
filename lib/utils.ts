@@ -16,3 +16,10 @@ export function getFullAddress(address: any) {
     address?.zipcode
   );
 }
+
+export const addressRegex = (address: string) => {
+  const regex =
+    /^\s*(\d+)\s+([\w\s\.]+?),?\s+([\w\s]+?),\s+([A-Z]{2})\s+(\d{5})(?:\s+([\w\s]+))?\s*$/i;
+
+  return regex.test(address);
+};

@@ -6,14 +6,7 @@ import { FilterComponent } from "./FilterComponent";
 import { IoIosSearch } from "react-icons/io";
 import { useRouter } from "next/navigation";
 import queryClient from "@/lib/queryclient";
-import {
-  bedrooms,
-  price,
-  size,
-  listingStatus,
-  distance,
-  acreage,
-} from "@/lib/filterItems";
+import { bedrooms, listingStatus, distance } from "@/lib/filterItems";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useDebounce } from "use-debounce";
@@ -21,12 +14,15 @@ import { useQueryState } from "@/store/queryState";
 import PageLoader from "./ui/PageLoader";
 import { Button } from "./ui/button";
 import { usePropertyData } from "@/store/propertyData";
+import { addressRegex } from "@/lib/utils";
+import PriceFilter from "./PriceFilter";
+import SqftFilter from "./SqftFilter";
 
 const Navbar = () => {
   const router = useRouter();
 
   const { getQueryString, updateQuery } = useQueryState();
-  const { setPropertyData, setPriority } = usePropertyData();
+  const { setPriority } = usePropertyData();
   const query = JSON.parse(decodeURIComponent(getQueryString()));
   const { searchedTerm, listingType, filterState } = query;
 
@@ -66,7 +62,7 @@ const Navbar = () => {
     listingType,
     filterState.beds,
     filterState.price,
-    filterState.sqftMin,
+    filterState.sqft,
     filterState.buildYear.min,
     filterState.buildYear.max,
     filterState.distance,
@@ -77,21 +73,25 @@ const Navbar = () => {
     setPriority(priority);
   };
 
-  const handleClearFilters = () => {
+  const removeFilters = () => {
     updateQuery("filterState", {
       beds: "",
       price: "",
-      sqftMin: "",
+      sqft: "",
       distance: "",
       buildYear: {
         min: "",
         max: "",
       },
     });
-    updateQuery("searchedTerm", "");
     updateQuery("listingType", "");
-    updateQuery("query", "");
+    updateQuery("regionId", "");
     setDraftYearBuilt({ buildYearMin: "", buildYearMax: "" });
+  };
+
+  const handleClearFilters = () => {
+    removeFilters();
+    updateQuery("searchedTerm", "");
     setInputValue("");
     router.replace("/");
   };
@@ -104,6 +104,7 @@ const Navbar = () => {
             value={inputValue}
             onChange={(e) => {
               setInputValue(e.target.value);
+              removeFilters();
             }}
             onFocus={() => setDropdownOpen(true)}
             onBlur={() => setDropdownOpen(false)}
@@ -117,7 +118,7 @@ const Navbar = () => {
             }}
           />
           <div
-            onClick={handleSearch}
+            onClick={() => handleSearch()}
             className="w-16 h-12 cursor-pointer bg-blue-500 flex items-center justify-center"
           >
             <IoIosSearch className="text-2xl text-white" />
@@ -176,6 +177,7 @@ const Navbar = () => {
             updateQuery("filterState.distance", value);
             setPriorityAndSearch("distance");
           }}
+          disabled={addressRegex(searchedTerm)}
         />
         <Dropdown
           placeholder="Bedrooms"
@@ -186,27 +188,40 @@ const Navbar = () => {
             updateQuery("filterState.beds", value);
             setPriorityAndSearch("search");
           }}
+          disabled={addressRegex(searchedTerm)}
         />
-        <Dropdown
+
+        <PriceFilter
           title="Price"
           placeholder="Price"
-          items={price}
-          value={filterState.price}
-          onChange={(value) => {
+          disabled={addressRegex(searchedTerm)}
+          onChange={(value: string) => {
             updateQuery("filterState.price", value);
             setPriorityAndSearch("search");
           }}
         />
-        <Dropdown
+        <SqftFilter
+          title="Square Feet"
+          placeholder="Square Feet"
+          disabled={addressRegex(searchedTerm)}
+          onChange={(value: string) => {
+            updateQuery("filterState.sqft", value);
+            setPriorityAndSearch("search");
+          }}
+        />
+
+        {/* <Dropdown
           title="Square Feet"
           placeholder="Square Feet"
           items={size}
           value={filterState.sqftMin}
+          searchable={false}
           onChange={(value) => {
             updateQuery("filterState.sqftMin", value);
             setPriorityAndSearch("search");
           }}
-        />
+          disabled={addressRegex(searchedTerm)}
+        /> */}
         <Dropdown
           title="Listing Status"
           placeholder="Listing Status"
@@ -216,6 +231,7 @@ const Navbar = () => {
             updateQuery("listingType", value);
             setPriorityAndSearch("search");
           }}
+          disabled={addressRegex(searchedTerm)}
         />
         {/* todo commented for now */}
         {/* <Dropdown title="Acreage" items={acreage} onChange={() => {}} /> */}
@@ -226,6 +242,7 @@ const Navbar = () => {
             updateQuery("buildYearMin", value);
           }}
         /> */}
+
         <div className="flex items-center gap-1">
           <input
             name="buildYearMin"
@@ -254,6 +271,7 @@ const Navbar = () => {
                 );
               }
             }}
+            disabled={addressRegex(searchedTerm)}
           />
           <span className="text-lg text-gray-500">-</span>
           <input
@@ -275,6 +293,7 @@ const Navbar = () => {
                 draftYearBuilt.buildYearMax
               )
             }
+            disabled={addressRegex(searchedTerm)}
           />
         </div>
         <div className="flex items-center justify-center">

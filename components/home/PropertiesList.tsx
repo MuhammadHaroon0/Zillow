@@ -13,12 +13,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import PageLoader from "../ui/PageLoader";
 import { usePropertyData } from "@/store/propertyData";
 import { useQueryState } from "@/store/queryState";
-import { getFullAddress } from "@/lib/utils";
+import { addressRegex, getFullAddress } from "@/lib/utils";
 import {
   IoHomeOutline,
   IoLocationOutline,
   IoSearchOutline,
 } from "react-icons/io5";
+import { X } from "lucide-react";
 
 const PropertiesListComponent = () => {
   const { setPropertyData, priority } = usePropertyData();
@@ -28,7 +29,7 @@ const PropertiesListComponent = () => {
     decodeURIComponent(searchParams.get("query") || "{}")
   );
   const { searchedTerm, filterState = {}, regionId, listingType } = query;
-  const { price, beds, sqftMin, buildYear, distance } = filterState;
+  const { price, beds, sqft, buildYear, distance } = filterState;
 
   const updateQuery = useQueryState((state) => state.updateQuery);
 
@@ -43,6 +44,7 @@ const PropertiesListComponent = () => {
     data: zpidId,
     isSuccess: isSuccessZpidId,
     isLoading: isLoadingZpidId,
+    isError: isErrorZpidId,
   } = useQuery({
     queryFn: async () => {
       const res = await axios.get(`/api/find-zpid?address=${searchedTerm}`);
@@ -88,7 +90,7 @@ const PropertiesListComponent = () => {
       const res = await axios.get(`/api/similar/${regionId}`);
       return res.data;
     },
-    enabled: !!regionId,
+    enabled: !!regionId && !addressRegex(searchedTerm),
     queryKey: ["zillow", regionId, "similar"],
   });
 
@@ -99,17 +101,17 @@ const PropertiesListComponent = () => {
       query.set("status_type", listingType);
       query.set("minPrice", price.split("-")[0] || "");
       query.set("maxPrice", price.split("-")[1] || "");
-      query.set("minBeds", beds.split("-")[0] || "");
-      query.set("maxBeds", beds.split("-")[1] || "");
-      query.set("minSqft", sqftMin.split("-")[0] || "");
-      query.set("maxSqft", sqftMin.split("-")[1] || "");
-      query.set("yearBuiltMin", buildYear.min || "");
-      query.set("yearBuiltMax", buildYear.max || "");
+      query.set("bedsMin", beds.split("-")[0] || "");
+      query.set("bedsMax", beds.split("-")[1] || "");
+      query.set("sqftMin", sqft.split("-")[0] || "");
+      query.set("sqftMax", sqft.split("-")[1] || "");
+      query.set("buildYearMin", buildYear.min || "");
+      query.set("buildYearMax", buildYear.max || "");
 
       const res = await axios.get(`/api/search?${query.toString()}`);
       return res.data;
     },
-    queryKey: [`zillow-search`, listingType, price, beds, sqftMin, buildYear],
+    queryKey: [`zillow-search`, listingType, price, beds, sqft, buildYear],
     enabled: false,
   });
 
@@ -137,16 +139,30 @@ const PropertiesListComponent = () => {
       !!propertyDataByLocation?.data?.longitude,
   });
 
+  const {
+    data: propertyCompareData,
+    isLoading: isLoadingPropertyCompare,
+    isError: isErrorPropertyCompare,
+    isSuccess: isSuccessPropertyCompare,
+  } = useQuery({
+    queryFn: async () => {
+      const res = await axios.get(`/api/property-compare/${regionId}`);
+      return res.data;
+    },
+    queryKey: ["zillow", regionId, "property-compare"],
+    enabled: !!regionId && addressRegex(searchedTerm),
+  });
+
   // Check if any filters are actually applied
   const hasActiveFilters = useMemo(() => {
     return (
       listingType ||
       (price && price !== "-") ||
       (beds && beds !== "-") ||
-      (sqftMin && sqftMin !== "-") ||
+      (sqft && sqft !== "-") ||
       (buildYear && (buildYear.min || buildYear.max))
     );
-  }, [listingType, price, beds, sqftMin, distance, buildYear]);
+  }, [listingType, price, beds, sqft, distance, buildYear]);
 
   const mapProperty = (item: any) => ({
     address: item.address,
@@ -161,13 +177,12 @@ const PropertiesListComponent = () => {
     miniCardPhotos:
       item.miniCardPhotos ||
       (item.carouselPhotos ? item.carouselPhotos : [item.imgSrc]),
-    price: item.price,
+    price: item.lastSoldPrice || item.price,
     zpid: item.zpid,
   });
 
   const updatedPropertyData = useMemo(() => {
     if (!propertyDataByLocation?.data) return [];
-
     const mainProperty = mapProperty({
       ...propertyDataByLocation.data,
     });
@@ -180,7 +195,7 @@ const PropertiesListComponent = () => {
           miniCardPhotos: [r.property.imgSrc],
         })
       );
-      return [mainProperty, ...radiusProps];
+      return [...radiusProps];
     }
 
     // Priority 2: Filter/Search
@@ -195,7 +210,7 @@ const PropertiesListComponent = () => {
           miniCardPhotos: f.carouselPhotos,
         })
       );
-      return [mainProperty, ...filterProps];
+      return [...filterProps];
     }
 
     // Priority 3: Similar
@@ -203,10 +218,24 @@ const PropertiesListComponent = () => {
       (priority === "distance" || priority === "search") &&
       propertyDataBySimilar?.data
     ) {
-      const similarProps = propertyDataBySimilar.data.map((s: any) =>
-        mapProperty(s)
+      if (addressRegex(searchedTerm)) {
+        const similarProps = propertyDataBySimilar?.data
+          ?.filter((s: any) => s.homeStatus === "RECENTLY_SOLD")
+          .map((s: any) => mapProperty(s));
+        return [mainProperty, ...similarProps];
+      } else {
+        const similarProps = propertyDataBySimilar?.data.map((s: any) =>
+          mapProperty(s)
+        );
+        return [mainProperty, ...similarProps];
+      }
+    }
+
+    if (isSuccessPropertyCompare && propertyCompareData?.data) {
+      const compareProps = propertyCompareData?.data?.map((c: any) =>
+        mapProperty(c)
       );
-      return [mainProperty, ...similarProps];
+      return [mainProperty, ...compareProps];
     }
 
     // fallback
@@ -218,6 +247,8 @@ const PropertiesListComponent = () => {
     fetchRadius?.data?.data,
     hasActiveFilters,
     distance,
+    isSuccessPropertyCompare,
+    propertyCompareData?.data,
   ]);
 
   useEffect(() => {
@@ -229,7 +260,6 @@ const PropertiesListComponent = () => {
   }, [updatedPropertyData]);
 
   useEffect(() => {
-    // Only call filterProperty API if there are active filters and regionId is available
     if (hasActiveFilters && regionId && searchedTerm) {
       filterProperty.refetch();
     }
@@ -240,11 +270,29 @@ const PropertiesListComponent = () => {
     listingType,
     price,
     beds,
-    sqftMin,
+    sqft,
     buildYear,
   ]);
 
-  if (errorProperty || errorSimilar || fetchRadius.error) {
+  if (isErrorZpidId) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center bg-gray-50">
+        <div className="text-center p-8 bg-white rounded-lg shadow-sm border border-red-200 max-w-md">
+          <div className="text-red-500 text-5xl mb-4">⚠️</div>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">
+            No property found
+          </h3>
+        </div>
+      </div>
+    );
+  }
+
+  if (
+    errorProperty ||
+    errorSimilar ||
+    fetchRadius.error ||
+    isErrorPropertyCompare
+  ) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center bg-gray-50">
         <div className="text-center p-8 bg-white rounded-lg shadow-sm border border-red-200 max-w-md">
@@ -272,7 +320,8 @@ const PropertiesListComponent = () => {
     isLoadingZpidId ||
     isLoadingSimilar ||
     filterProperty.isLoading ||
-    fetchRadius.isLoading
+    fetchRadius.isLoading ||
+    isLoadingPropertyCompare
   ) {
     return (
       <div className="w-full flex items-center justify-center p-8 h-[80vh]">
@@ -282,7 +331,7 @@ const PropertiesListComponent = () => {
   }
 
   // Show default page when no search term or when property data is empty/invalid
-  if (!searchedTerm || updatedPropertyData.length === 0 || !selectedProperty) {
+  if (updatedPropertyData.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex  justify-center p-4">
         <div className="max-w-4xl mx-auto mt-10 text-center">

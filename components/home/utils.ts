@@ -8,7 +8,7 @@ export const formatAddress = (address: any) => {
 };
 
 export const formatPropertyValue = (property: any, columnId: string) => {
-  const value = property[columnId];
+  const value = property?.[columnId];
   switch (columnId) {
     case "address":
       return formatAddress(value);
@@ -31,6 +31,10 @@ export const formatPropertyValue = (property: any, columnId: string) => {
         return `For Rent`;
       } else if (value === "PENDING") {
         return `Pending`;
+      } else if (value === "RecentlySold") {
+        return `Sold`;
+      } else if (value === "OTHER") {
+        return `Other`;
       }
       return value ? value?.replace("_", " ") : "N/A";
 

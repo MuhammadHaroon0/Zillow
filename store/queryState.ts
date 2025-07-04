@@ -9,7 +9,7 @@ interface FilterState {
   price: string;
   beds: string;
   buildYear: { min: string; max: string };
-  sqftMin: string;
+  sqft: string;
   distance: string;
 }
 
@@ -32,11 +32,12 @@ const initialState: Omit<QueryState, "updateQuery" | "getQueryString"> = {
     price: "",
     beds: "",
     buildYear: { min: "", max: "" },
-    sqftMin: "",
+    sqft: "",
     distance: "",
   },
   listingType: "",
   searchedTerm: "",
+  regionId: "",
 };
 
 export const useQueryState = create<QueryState>((set, get) => ({

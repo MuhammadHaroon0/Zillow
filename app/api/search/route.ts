@@ -11,18 +11,27 @@ export async function GET(request: NextRequest) {
   // Required: location
   const location = searchParams.get("location");
   if (!location) {
-    return NextResponse.json({ error: "Missing 'location' param" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing 'location' param" },
+      { status: 400 }
+    );
   }
   params["location"] = location;
 
   // Optional filters
   const possibleParams = [
-    "status_type", "home_type",
-    "minPrice", "maxPrice",
-    "minBeds", "maxBeds",
-    "minBaths", "maxBaths",
-    "minSqft", "maxSqft",
-    "yearBuiltMin", "yearBuiltMax",
+    "status_type",
+    "home_type",
+    "minPrice",
+    "maxPrice",
+    "bedsMin",
+    "bedsMax",
+    "bathsMin",
+    "bathsMax",
+    "sqftMin",
+    "sqftMax",
+    "buildYearMin",
+    "buildYearMax",
     // add more as needed
   ];
   for (const key of possibleParams) {
