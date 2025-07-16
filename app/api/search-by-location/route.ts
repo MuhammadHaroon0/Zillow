@@ -28,9 +28,8 @@ export async function GET(request: Request) {
     let allHomes: any[] = [];
     let currentPage = 1;
     let hasMorePages = true;
-    const maxPages = 50; // Safety limit to prevent infinite loops
 
-    while (hasMorePages && currentPage <= maxPages) {
+    while (hasMorePages) {
       console.log(`Fetching page ${currentPage}...`);
 
       // Build the query parameters
