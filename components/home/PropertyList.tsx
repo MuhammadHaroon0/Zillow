@@ -75,9 +75,9 @@ const PropertyList = ({
         <table className="w-full table-fixed">
           <thead>
             <tr>
-              {selectedState?.map((columnId) => (
+              {selectedState?.map((columnId, index) => (
                 <th
-                  key={columnId}
+                  key={columnId + `index-${index}`}
                   className="text-sm text-black font-medium text-center w-26"
                 >
                   <div
@@ -87,11 +87,10 @@ const PropertyList = ({
                     {columns.find((col) => col.id === columnId)?.label}
 
                     <FaCaretDown
-                      className={`ml-1 transition-transform duration-200 ${
-                        sortField === columnId && sortDirection === "desc"
-                          ? "rotate-180"
-                          : ""
-                      }`}
+                      className={`ml-1 transition-transform duration-200 ${sortField === columnId && sortDirection === "desc"
+                        ? "rotate-180"
+                        : ""
+                        }`}
                     />
                   </div>
                 </th>
@@ -106,7 +105,7 @@ const PropertyList = ({
       <div className="w-full h-full">
         {sortedData?.map((property: any, index: number) => (
           <PropertyCard
-            key={property.zpid || index}
+            key={property.zpid + `index-${index}`}
             property={property}
             selectedState={selectedState}
             columns={columns}
