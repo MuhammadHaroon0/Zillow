@@ -77,9 +77,9 @@ const PropertyList = ({
         <table className="w-full table-fixed">
           <thead>
             <tr>
-              {selectedState?.map((columnId) => (
+              {selectedState?.map((columnId, index) => (
                 <th
-                  key={columnId}
+                  key={columnId + `index-${index}`}
                   className="text-sm text-black font-medium text-center w-26"
                 >
                   <div
@@ -108,7 +108,7 @@ const PropertyList = ({
       <div className="w-full h-full">
         {sortedData?.map((property: any, index: number) => (
           <PropertyCard
-            key={index}
+            key={property.zpid + `index-${index}`}
             property={property}
             selectedState={selectedState}
             columns={columns}

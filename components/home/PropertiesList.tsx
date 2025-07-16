@@ -1,7 +1,11 @@
 "use client";
 
 import { useFilterStore } from "@/store/filterStates";
+<<<<<<< HEAD
 import { Suspense, useEffect, useMemo, useState } from "react";
+=======
+import { Suspense, useEffect, useState, useRef } from "react";
+>>>>>>> fa07cb3474d6e8d758156053873eda90b2363400
 import GoogleMapComponent from "./MapComponent";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -40,6 +44,10 @@ const PropertiesListComponent = () => {
     lng: 0,
   });
 
+  // Use refs to track if we've already set initial values
+  const hasSetInitialProperty = useRef(false);
+  const hasSetInitialUrl = useRef(false);
+
   const {
     data: zpidId,
     isSuccess: isSuccessZpidId,
@@ -50,6 +58,7 @@ const PropertiesListComponent = () => {
       const res = await axios.get(`/api/find-zpid?address=${searchedTerm}`);
       return res.data;
     },
+<<<<<<< HEAD
     queryKey: ["zillow", searchedTerm],
     enabled: !!searchedTerm,
   });
@@ -64,9 +73,58 @@ const PropertiesListComponent = () => {
       const updatedQuery = { ...currentQuery, regionId: zpidId.zpid };
       const params = new URLSearchParams(searchParams.toString());
       params.set("query", encodeURIComponent(JSON.stringify(updatedQuery)));
-      router.push(`?${params.toString()}`);
+=======
+    enabled: !!searchedTerm && !!listingType,
+    queryKey: ["zillow", searchedTerm, "location", listingType, filterState],
+    staleTime: 5 * 60 * 1000, // 5 minutes cache to prevent unnecessary refetches
+  });
+
+  console.log(propertyDataByLocation?.nearbyHomes);
+
+  // Set initial selected property only once when data loads
+  useEffect(() => {
+    if (
+      propertyDataByLocation?.nearbyHomes?.length > 0 &&
+      !hasSetInitialProperty.current
+    ) {
+      setSelectedProperty(propertyDataByLocation.nearbyHomes[0]);
+      hasSetInitialProperty.current = true;
     }
+  }, [propertyDataByLocation?.nearbyHomes]);
+
+  // Set property data in store when data changes
+  useEffect(() => {
+    if (propertyDataByLocation?.nearbyHomes?.length > 0) {
+      setPropertyData(propertyDataByLocation);
+    }
+  }, [propertyDataByLocation, setPropertyData]);
+
+  // Update URL with coordinates only once when data loads
+  useEffect(() => {
+    if (
+      propertyDataByLocation?.nearbyHomes?.length > 0 &&
+      !hasSetInitialUrl.current
+    ) {
+      const firstProperty = propertyDataByLocation.nearbyHomes[0];
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("lat", firstProperty.latitude.toString());
+      params.set("lng", firstProperty.longitude.toString());
+>>>>>>> fa07cb3474d6e8d758156053873eda90b2363400
+      router.push(`?${params.toString()}`);
+      hasSetInitialUrl.current = true;
+    }
+<<<<<<< HEAD
   }, [isSuccessZpidId, zpidId, router, searchedTerm]);
+=======
+  }, [propertyDataByLocation?.nearbyHomes, searchParams, router]);
+
+  // Reset refs when search term or listing type changes (new search)
+  useEffect(() => {
+    hasSetInitialProperty.current = false;
+    hasSetInitialUrl.current = false;
+    setSelectedProperty(null);
+  }, [searchedTerm, listingType]);
+>>>>>>> fa07cb3474d6e8d758156053873eda90b2363400
 
   const {
     data: propertyDataByLocation,
