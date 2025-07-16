@@ -1,17 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 
-<<<<<<< HEAD
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ zpid: string }> }
-) {
-  const { zpid } = await params;
-
-  if (!zpid) {
-    return NextResponse.json(
-      { error: "Missing 'zpid' param" },
-=======
 function generateCirclePolygon(
   centerLat: number,
   centerLng: number,
@@ -24,9 +13,10 @@ function generateCirclePolygon(
     const angle = (i / numPoints) * 2 * Math.PI;
     const dx = radiusMiles * Math.cos(angle);
     const dy = radiusMiles * Math.sin(angle);
-    const dLat = dy / earthRadius * (180 / Math.PI);
+    const dLat = (dy / earthRadius) * (180 / Math.PI);
     const dLng =
-      dx / (earthRadius * Math.cos(centerLat * Math.PI / 180)) * (180 / Math.PI);
+      (dx / (earthRadius * Math.cos((centerLat * Math.PI) / 180))) *
+      (180 / Math.PI);
     points.push({
       lat: centerLat + dLat,
       lng: centerLng + dLng,
@@ -46,7 +36,12 @@ function isWithin8Months(dateSoldStr: string) {
   return monthsDiff <= 8;
 }
 
-function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number) {
+function haversineDistance(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+) {
   const R = 3958.8;
   const toRad = (x: number) => (x * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
@@ -79,7 +74,6 @@ export async function GET(request: NextRequest) {
   if (isNaN(latitude) || isNaN(longitude)) {
     return NextResponse.json(
       { error: "Invalid lat/lng values" },
->>>>>>> 16df1071c6f650434489f01139e98e6f1ba48a05
       { status: 400 }
     );
   }
@@ -87,16 +81,23 @@ export async function GET(request: NextRequest) {
   const url = process.env.ZILLOW_URL as string;
   const apiKey = process.env.ZILLOW_API_KEY as string;
   if (!url || !apiKey)
-    return NextResponse.json({ error: "Missing environment variables" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Missing environment variables" },
+      { status: 500 }
+    );
 
   try {
     // 1. Generate polygon for 0.5 mile radius
     const polygon = generateCirclePolygon(latitude, longitude, 0.5);
 
+    const polygonString = polygon
+      .map((point) => `${point.lng} ${point.lat}`)
+      .join(", ");
+
     // 2. Fetch all properties within this polygon
     const propsResp = await axios.post(
-      url + "/propertyByPolygon",
-      { polygon },
+      url + `/propertyByPolygon?polygon=${polygonString}`,
+
       {
         headers: {
           "x-rapidapi-key": apiKey,
@@ -104,14 +105,13 @@ export async function GET(request: NextRequest) {
         },
       }
     );
+
     const props = propsResp.data?.props || propsResp.data || [];
 
     // 3. Filter by dateSold and distance
     const filtered = props.filter((p: any) => {
       if (!isWithin8Months(p.dateSold)) return false;
-      if (
-        haversineDistance(latitude, longitude, p.latitude, p.longitude) > 0.5
-      )
+      if (haversineDistance(latitude, longitude, p.latitude, p.longitude) > 0.5)
         return false;
       return true;
     });

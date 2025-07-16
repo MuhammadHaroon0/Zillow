@@ -1,11 +1,7 @@
 "use client";
 
 import { useFilterStore } from "@/store/filterStates";
-<<<<<<< HEAD
-import { Suspense, useEffect, useMemo, useState } from "react";
-=======
-import { Suspense, useEffect, useState, useRef } from "react";
->>>>>>> fa07cb3474d6e8d758156053873eda90b2363400
+import { Suspense, useEffect, useState, useRef, useMemo } from "react";
 import GoogleMapComponent from "./MapComponent";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -32,7 +28,13 @@ const PropertiesListComponent = () => {
   const query = JSON.parse(
     decodeURIComponent(searchParams.get("query") || "{}")
   );
-  const { searchedTerm, filterState = {}, regionId, listingType } = query;
+  const {
+    searchedTerm,
+    filterState = {},
+    regionId,
+    listingType,
+    mapBounds,
+  } = query;
   const { price, beds, sqft, buildYear, distance } = filterState;
 
   const updateQuery = useQueryState((state) => state.updateQuery);
@@ -58,28 +60,46 @@ const PropertiesListComponent = () => {
       const res = await axios.get(`/api/find-zpid?address=${searchedTerm}`);
       return res.data;
     },
-<<<<<<< HEAD
-    queryKey: ["zillow", searchedTerm],
     enabled: !!searchedTerm,
+    queryKey: ["zillow", searchedTerm, "location", filterState],
+    staleTime: 5 * 60 * 1000, // 5 minutes cache to prevent unnecessary refetches
   });
 
   useEffect(() => {
     if (isSuccessZpidId && zpidId?.zpid) {
       updateQuery("regionId", zpidId.zpid);
+      updateQuery("mapBounds.lat", zpidId?.summary?.latitude);
+      updateQuery("mapBounds.lng", zpidId?.summary?.longitude);
 
       const currentQuery = JSON.parse(
         decodeURIComponent(searchParams.get("query") || "{}")
       );
-      const updatedQuery = { ...currentQuery, regionId: zpidId.zpid };
+      const updatedQuery = {
+        ...currentQuery,
+        regionId: zpidId.zpid,
+        mapBounds: {
+          lat: zpidId?.summary?.latitude,
+          lng: zpidId?.summary?.longitude,
+        },
+      };
       const params = new URLSearchParams(searchParams.toString());
       params.set("query", encodeURIComponent(JSON.stringify(updatedQuery)));
-=======
-    enabled: !!searchedTerm && !!listingType,
-    queryKey: ["zillow", searchedTerm, "location", listingType, filterState],
-    staleTime: 5 * 60 * 1000, // 5 minutes cache to prevent unnecessary refetches
-  });
+      router.push(`?${params.toString()}`);
+    }
+  }, [isSuccessZpidId, zpidId, router, searchedTerm]);
 
-  console.log(propertyDataByLocation?.nearbyHomes);
+  const {
+    data: propertyDataByLocation,
+    isLoading: isLoadingProperty,
+    error: errorProperty,
+  } = useQuery({
+    queryFn: async () => {
+      const res = await axios.get(`/api/property/${regionId}`);
+      return res.data;
+    },
+    enabled: !!regionId,
+    queryKey: ["zillow", regionId],
+  });
 
   // Set initial selected property only once when data loads
   useEffect(() => {
@@ -109,13 +129,9 @@ const PropertiesListComponent = () => {
       const params = new URLSearchParams(searchParams.toString());
       params.set("lat", firstProperty.latitude.toString());
       params.set("lng", firstProperty.longitude.toString());
->>>>>>> fa07cb3474d6e8d758156053873eda90b2363400
       router.push(`?${params.toString()}`);
       hasSetInitialUrl.current = true;
     }
-<<<<<<< HEAD
-  }, [isSuccessZpidId, zpidId, router, searchedTerm]);
-=======
   }, [propertyDataByLocation?.nearbyHomes, searchParams, router]);
 
   // Reset refs when search term or listing type changes (new search)
@@ -124,20 +140,6 @@ const PropertiesListComponent = () => {
     hasSetInitialUrl.current = false;
     setSelectedProperty(null);
   }, [searchedTerm, listingType]);
->>>>>>> fa07cb3474d6e8d758156053873eda90b2363400
-
-  const {
-    data: propertyDataByLocation,
-    isLoading: isLoadingProperty,
-    error: errorProperty,
-  } = useQuery({
-    queryFn: async () => {
-      const res = await axios.get(`/api/property/${regionId}`);
-      return res.data;
-    },
-    enabled: !!regionId,
-    queryKey: ["zillow", regionId],
-  });
 
   const {
     data: propertyDataBySimilar,
@@ -145,7 +147,9 @@ const PropertiesListComponent = () => {
     error: errorSimilar,
   } = useQuery({
     queryFn: async () => {
-      const res = await axios.get(`/api/similar/${regionId}`);
+      const res = await axios.get(
+        `/api/similar/${regionId}?lat=${mapBounds.lat}&lng=${mapBounds.lng}`
+      );
       return res.data;
     },
     enabled: !!regionId && !addressRegex(searchedTerm),
@@ -462,9 +466,7 @@ const PropertiesListComponent = () => {
   return (
     <div className="w-full flex md:flex-row flex-col md:gap-0 gap-4 md:px-6 px-2 py-4">
       <div className="md:w-[40%] w-full md:h-[82vh] h-[400px] overflow-hidden rounded-xl">
-        <GoogleMapComponent
-          showSelectedPropertyOnMap={showSelectedPropertyOnMap}
-        />
+        <GoogleMapComponent />
       </div>
       <div className="md:w-[60%] w-full md:h-[82vh] h-[65vh] pb-4">
         <SelectedPropertyDetails

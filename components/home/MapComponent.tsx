@@ -25,14 +25,12 @@ interface Property {
   [key: string]: any;
 }
 
-<<<<<<< HEAD
-export default function GoogleMapComponent({
-  showSelectedPropertyOnMap,
-}: {
-  showSelectedPropertyOnMap: any;
-}) {
-=======
-function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number) {
+function haversineDistance(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+) {
   const R = 3958.8; // Earth's radius in miles
   const toRad = (x: number) => (x * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
@@ -40,9 +38,9 @@ function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(toRad(lat1)) *
-    Math.cos(toRad(lat2)) *
-    Math.sin(dLng / 2) *
-    Math.sin(dLng / 2);
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
@@ -58,7 +56,6 @@ function isWithin8Months(dateSoldStr: string) {
 }
 
 export default function GoogleMapComponent() {
->>>>>>> fa07cb3474d6e8d758156053873eda90b2363400
   const { propertyData } = usePropertyData();
   const mapRef = useRef<google.maps.Map | null>(null);
 
@@ -71,13 +68,6 @@ export default function GoogleMapComponent() {
   };
 
   const [mapCenter, setMapCenter] = useState(center);
-
-  // Update map center when propertyData changes
-  useEffect(() => {
-    if (showSelectedPropertyOnMap) {
-      setMapCenter(showSelectedPropertyOnMap);
-    }
-  }, [showSelectedPropertyOnMap]);
 
   useEffect(() => {
     if (propertyData?.[0]?.latitude && propertyData?.[0]?.longitude) {
@@ -109,14 +99,9 @@ export default function GoogleMapComponent() {
 
   // Filter properties based on distance (0.5 mile radius) and sold within last 8 months
   const filteredProperties = useMemo(() => {
-<<<<<<< HEAD
-    if (!polygon || !propertyData) return propertyData || [];
-=======
-
     if (!propertyData?.nearbyHomes || !mapCenter.lat || !mapCenter.lng) {
       return [];
     }
->>>>>>> fa07cb3474d6e8d758156053873eda90b2363400
 
     return propertyData?.filter((property: Property) => {
       if (!property.latitude || !property.longitude) return false;
@@ -128,13 +113,6 @@ export default function GoogleMapComponent() {
         property.latitude,
         property.longitude
       );
-<<<<<<< HEAD
-    });
-  }, [polygon, propertyData]);
-
-  const propertiesToShow =
-    filteredProperties.length > 0 ? filteredProperties : propertyData || [];
-=======
 
       if (distance > 0.5) return false;
 
@@ -147,8 +125,6 @@ export default function GoogleMapComponent() {
       return true;
     });
   }, [propertyData?.nearbyHomes, mapCenter]);
-  console.log(filteredProperties);
->>>>>>> fa07cb3474d6e8d758156053873eda90b2363400
 
   if (!isLoaded) return <div>Loading map...</div>;
 
@@ -175,13 +151,8 @@ export default function GoogleMapComponent() {
         }}
       >
         {/* Property markers */}
-<<<<<<< HEAD
-        {propertiesToShow.map((property: Property, index: number) => (
-          <div key={index}>
-=======
         {filteredProperties.map((property: Property, index: number) => (
           <div key={property.zpid + `index-${index}`}>
->>>>>>> fa07cb3474d6e8d758156053873eda90b2363400
             <Marker
               position={{ lat: property.latitude, lng: property.longitude }}
               onClick={() => setSelected(property)}
@@ -201,18 +172,11 @@ export default function GoogleMapComponent() {
                 className="relative cursor-pointer transform -translate-x-1/2 -translate-y-full w-16"
               >
                 <div
-<<<<<<< HEAD
                   className={`px-3 py-1.5 w-full ${
-                    property.listingStatus === "RECENTLY_SOLD"
+                    property.Status === "RecentlySold"
                       ? "bg-red-500"
                       : "bg-green-500"
                   } hover:bg-green-400 shadow-md font-bold hover:font-normal text-center transition-all duration-200 relative text-white`}
-=======
-                  className={`px-3 py-1.5 w-full ${property.Status === "RecentlySold"
-                    ? "bg-red-500"
-                    : "bg-green-500"
-                    } hover:bg-green-400 shadow-md font-bold hover:font-normal text-center transition-all duration-200 relative text-white`}
->>>>>>> fa07cb3474d6e8d758156053873eda90b2363400
                 >
                   <span className="text-sm whitespace-nowrap">
                     {property.price
