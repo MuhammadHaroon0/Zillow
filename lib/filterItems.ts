@@ -102,7 +102,6 @@ export const propertySize = [
 export const listingStatus = [
   { id: "ForSale", label: "On Sale" },
   { id: "RecentlySold", label: "Sold" },
-  { id: "ForRent", label: "On Rent" },
 ];
 
 export const distance = [

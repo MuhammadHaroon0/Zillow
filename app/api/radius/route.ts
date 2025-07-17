@@ -13,9 +13,10 @@ function generateCirclePolygon(
     const angle = (i / numPoints) * 2 * Math.PI;
     const dx = radiusMiles * Math.cos(angle);
     const dy = radiusMiles * Math.sin(angle);
-    const dLat = dy / earthRadius * (180 / Math.PI);
+    const dLat = (dy / earthRadius) * (180 / Math.PI);
     const dLng =
-      dx / (earthRadius * Math.cos(centerLat * Math.PI / 180)) * (180 / Math.PI);
+      (dx / (earthRadius * Math.cos((centerLat * Math.PI) / 180))) *
+      (180 / Math.PI);
     points.push({
       lat: centerLat + dLat,
       lng: centerLng + dLng,
@@ -64,21 +65,26 @@ export async function GET(request: NextRequest) {
   try {
     const polygon = generateCirclePolygon(latitude, longitude, radius);
 
-    const response = await axios.post(
-      url + "/propertyByPolygon",
-      { polygon },
-      {
-        headers: {
-          "x-rapidapi-key": apiKey,
-          "x-rapidapi-host": "zillow-com1.p.rapidapi.com",
-        },
-      }
-    );
+    const polygonString = polygon
+      .map((point) => `${point.lng} ${point.lat}`)
+      .join(", ");
+
+    const response = await axios.get(url + "/propertyByPolygon", {
+      params: {
+        polygon: polygonString,
+      },
+      headers: {
+        "x-rapidapi-key": apiKey,
+        "x-rapidapi-host": "zillow-com1.p.rapidapi.com",
+      },
+    });
 
     return NextResponse.json({ data: response.data }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json(
-      { error: error?.response?.data || "Failed to fetch properties by radius" },
+      {
+        error: error?.response?.data || "Failed to fetch properties by radius",
+      },
       { status: 500 }
     );
   }

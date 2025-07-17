@@ -1,7 +1,7 @@
 "use client";
 
 import { useFilterStore } from "@/store/filterStates";
-import { Suspense, useEffect, useState, useRef, useMemo } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import GoogleMapComponent from "./MapComponent";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -19,7 +19,6 @@ import {
   IoLocationOutline,
   IoSearchOutline,
 } from "react-icons/io5";
-import { X } from "lucide-react";
 
 const PropertiesListComponent = () => {
   const { setPropertyData, priority } = usePropertyData();
@@ -46,10 +45,6 @@ const PropertiesListComponent = () => {
     lng: 0,
   });
 
-  // Use refs to track if we've already set initial values
-  const hasSetInitialProperty = useRef(false);
-  const hasSetInitialUrl = useRef(false);
-
   const {
     data: zpidId,
     isSuccess: isSuccessZpidId,
@@ -60,9 +55,8 @@ const PropertiesListComponent = () => {
       const res = await axios.get(`/api/find-zpid?address=${searchedTerm}`);
       return res.data;
     },
+    queryKey: ["zillow", searchedTerm],
     enabled: !!searchedTerm,
-    queryKey: ["zillow", searchedTerm, "location", filterState],
-    staleTime: 5 * 60 * 1000, // 5 minutes cache to prevent unnecessary refetches
   });
 
   useEffect(() => {
@@ -101,46 +95,6 @@ const PropertiesListComponent = () => {
     queryKey: ["zillow", regionId],
   });
 
-  // Set initial selected property only once when data loads
-  useEffect(() => {
-    if (
-      propertyDataByLocation?.nearbyHomes?.length > 0 &&
-      !hasSetInitialProperty.current
-    ) {
-      setSelectedProperty(propertyDataByLocation.nearbyHomes[0]);
-      hasSetInitialProperty.current = true;
-    }
-  }, [propertyDataByLocation?.nearbyHomes]);
-
-  // Set property data in store when data changes
-  useEffect(() => {
-    if (propertyDataByLocation?.nearbyHomes?.length > 0) {
-      setPropertyData(propertyDataByLocation);
-    }
-  }, [propertyDataByLocation, setPropertyData]);
-
-  // Update URL with coordinates only once when data loads
-  useEffect(() => {
-    if (
-      propertyDataByLocation?.nearbyHomes?.length > 0 &&
-      !hasSetInitialUrl.current
-    ) {
-      const firstProperty = propertyDataByLocation.nearbyHomes[0];
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("lat", firstProperty.latitude.toString());
-      params.set("lng", firstProperty.longitude.toString());
-      router.push(`?${params.toString()}`);
-      hasSetInitialUrl.current = true;
-    }
-  }, [propertyDataByLocation?.nearbyHomes, searchParams, router]);
-
-  // Reset refs when search term or listing type changes (new search)
-  useEffect(() => {
-    hasSetInitialProperty.current = false;
-    hasSetInitialUrl.current = false;
-    setSelectedProperty(null);
-  }, [searchedTerm, listingType]);
-
   const {
     data: propertyDataBySimilar,
     isLoading: isLoadingSimilar,
@@ -148,11 +102,14 @@ const PropertiesListComponent = () => {
   } = useQuery({
     queryFn: async () => {
       const res = await axios.get(
-        `/api/similar/${regionId}?lat=${mapBounds.lat}&lng=${mapBounds.lng}`
+        `/api/similar/${regionId}?lat=${mapBounds.lat}&lng=${
+          mapBounds.lng
+        }&radius=${distance || 0.5}&soldWithinMonths=8`
       );
       return res.data;
     },
-    enabled: !!regionId && !addressRegex(searchedTerm),
+    enabled:
+      !!mapBounds?.lat && !!mapBounds?.lng && !addressRegex(searchedTerm),
     queryKey: ["zillow", regionId, "similar"],
   });
 
@@ -185,10 +142,10 @@ const PropertiesListComponent = () => {
         propertyDataByLocation?.data?.latitude?.toString() || ""
       );
       query.set(
-        "long",
+        "lng",
         propertyDataByLocation?.data?.longitude?.toString() || ""
       );
-      query.set("d", distance);
+      query.set("radius", distance);
 
       const res = await axios.get(`/api/radius?${query.toString()}`);
       return res.data;
@@ -250,11 +207,11 @@ const PropertiesListComponent = () => {
     });
 
     // Priority 1: Radius data
-    if (priority === "distance" && distance && fetchRadius?.data?.data) {
-      const radiusProps = fetchRadius.data.data.map((r: any) =>
+    if (priority === "distance" && distance && fetchRadius?.data?.data?.props) {
+      const radiusProps = fetchRadius?.data?.data?.props?.map((r: any) =>
         mapProperty({
-          ...r.property,
-          miniCardPhotos: [r.property.imgSrc],
+          ...r,
+          miniCardPhotos: [r?.imgSrc],
         })
       );
       return [...radiusProps];
@@ -266,7 +223,7 @@ const PropertiesListComponent = () => {
       hasActiveFilters &&
       filterProperty?.data?.data?.props
     ) {
-      const filterProps = filterProperty.data.data.props.map((f: any) =>
+      const filterProps = filterProperty?.data?.data?.props?.map((f: any) =>
         mapProperty({
           ...f,
           miniCardPhotos: f.carouselPhotos,
@@ -312,6 +269,8 @@ const PropertiesListComponent = () => {
     isSuccessPropertyCompare,
     propertyCompareData?.data,
   ]);
+
+  console.log(propertyDataBySimilar, "propertyDataBySimilar");
 
   useEffect(() => {
     if (updatedPropertyData.length > 0) {
@@ -466,7 +425,9 @@ const PropertiesListComponent = () => {
   return (
     <div className="w-full flex md:flex-row flex-col md:gap-0 gap-4 md:px-6 px-2 py-4">
       <div className="md:w-[40%] w-full md:h-[82vh] h-[400px] overflow-hidden rounded-xl">
-        <GoogleMapComponent />
+        <GoogleMapComponent
+          showSelectedPropertyOnMap={showSelectedPropertyOnMap}
+        />
       </div>
       <div className="md:w-[60%] w-full md:h-[82vh] h-[65vh] pb-4">
         <SelectedPropertyDetails
@@ -481,6 +442,17 @@ const PropertiesListComponent = () => {
           onPropertySelect={setSelectedProperty}
           setShowSelectedPropertyOnMap={setShowSelectedPropertyOnMap}
         />
+        {priority === "search" &&
+          propertyDataBySimilar?.data?.length <= 0 &&
+          !filterProperty?.data?.data?.props?.length && (
+            <div className="w-full flex items-center mt-4 justify-center">
+              <div className="text-center p-8  bg-white rounded-lg shadow-sm border border-red-200 max-w-md">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  ⚠️ Date sold not available for these properties
+                </h3>
+              </div>
+            </div>
+          )}
       </div>
     </div>
   );

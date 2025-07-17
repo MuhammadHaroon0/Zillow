@@ -2,6 +2,7 @@ import { usePropertyData } from "@/store/propertyData";
 import {
   GoogleMap,
   Marker,
+  Polygon,
   InfoWindow,
   OverlayView,
   useJsApiLoader,
@@ -25,37 +26,11 @@ interface Property {
   [key: string]: any;
 }
 
-function haversineDistance(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number
-) {
-  const R = 3958.8; // Earth's radius in miles
-  const toRad = (x: number) => (x * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) *
-      Math.cos(toRad(lat2)) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-function isWithin8Months(dateSoldStr: string) {
-  if (!dateSoldStr) return false;
-  const dateSold = new Date(dateSoldStr);
-  const now = new Date();
-  const monthsDiff =
-    (now.getFullYear() - dateSold.getFullYear()) * 12 +
-    (now.getMonth() - dateSold.getMonth());
-  return monthsDiff <= 8;
-}
-
-export default function GoogleMapComponent() {
+export default function GoogleMapComponent({
+  showSelectedPropertyOnMap,
+}: {
+  showSelectedPropertyOnMap: any;
+}) {
   const { propertyData } = usePropertyData();
   const mapRef = useRef<google.maps.Map | null>(null);
 
@@ -68,6 +43,13 @@ export default function GoogleMapComponent() {
   };
 
   const [mapCenter, setMapCenter] = useState(center);
+
+  // Update map center when propertyData changes
+  useEffect(() => {
+    if (showSelectedPropertyOnMap) {
+      setMapCenter(showSelectedPropertyOnMap);
+    }
+  }, [showSelectedPropertyOnMap]);
 
   useEffect(() => {
     if (propertyData?.[0]?.latitude && propertyData?.[0]?.longitude) {
@@ -97,34 +79,40 @@ export default function GoogleMapComponent() {
 
   const [selected, setSelected] = useState<Property | null>(null);
 
-  // Filter properties based on distance (0.5 mile radius) and sold within last 8 months
+  const polygonCoords = useMemo(() => {
+    if (!mapCenter.lat || !mapCenter.lng) return [];
+
+    return Array.from({ length: 36 }, (_, i) => {
+      const angle = (i / 36) * 2 * Math.PI;
+      const latOffset = 0.02 * Math.sin(angle) * (1 + 0.3 * Math.cos(angle));
+      const lngOffset = 0.015 * Math.cos(angle);
+      return {
+        lat: mapCenter.lat + latOffset,
+        lng: mapCenter.lng + lngOffset,
+      };
+    });
+  }, [mapCenter]);
+
+  const polygon = useMemo(() => {
+    if (!isLoaded) return null;
+    return new window.google.maps.Polygon({ paths: polygonCoords });
+  }, [polygonCoords, isLoaded]);
+
   const filteredProperties = useMemo(() => {
-    if (!propertyData?.nearbyHomes || !mapCenter.lat || !mapCenter.lng) {
-      return [];
-    }
+    if (!polygon || !propertyData) return propertyData || [];
 
     return propertyData?.filter((property: Property) => {
       if (!property.latitude || !property.longitude) return false;
 
-      // Check if property is within 0.5 mile radius
-      const distance = haversineDistance(
-        mapCenter.lat,
-        mapCenter.lng,
-        property.latitude,
-        property.longitude
+      return window.google.maps.geometry.poly.containsLocation(
+        new window.google.maps.LatLng(property.latitude, property.longitude),
+        polygon
       );
-
-      if (distance > 0.5) return false;
-
-      // Check if property was sold within last 8 months
-      if (property.Status === "RecentlySold" && property.dateSold) {
-        // return isWithin8Months(property.dateSold);
-      }
-
-      // Include active listings as well
-      return true;
     });
-  }, [propertyData?.nearbyHomes, mapCenter]);
+  }, [polygon, propertyData]);
+
+  const propertiesToShow =
+    filteredProperties.length > 0 ? filteredProperties : propertyData || [];
 
   if (!isLoaded) return <div>Loading map...</div>;
 
@@ -150,9 +138,23 @@ export default function GoogleMapComponent() {
           }
         }}
       >
+        {/* Egg-shaped polygon */}
+        <Polygon
+          paths={polygonCoords}
+          options={{
+            fillColor: "#3B82F6",
+            fillOpacity: 0.1,
+            strokeColor: "#3B82F6",
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            clickable: false,
+            zIndex: 100,
+          }}
+        />
+
         {/* Property markers */}
-        {filteredProperties.map((property: Property, index: number) => (
-          <div key={property.zpid + `index-${index}`}>
+        {propertiesToShow.map((property: Property, index: number) => (
+          <div key={index}>
             <Marker
               position={{ lat: property.latitude, lng: property.longitude }}
               onClick={() => setSelected(property)}
@@ -173,7 +175,7 @@ export default function GoogleMapComponent() {
               >
                 <div
                   className={`px-3 py-1.5 w-full ${
-                    property.Status === "RecentlySold"
+                    property.listingStatus === "RECENTLY_SOLD"
                       ? "bg-red-500"
                       : "bg-green-500"
                   } hover:bg-green-400 shadow-md font-bold hover:font-normal text-center transition-all duration-200 relative text-white`}
