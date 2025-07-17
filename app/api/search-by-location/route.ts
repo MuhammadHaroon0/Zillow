@@ -25,37 +25,56 @@ export async function GET(request: Request) {
   }
 
   try {
-    const response = await axios.get(
-      url +
-        "/propertyExtendedSearch" +
-        "?location=" +
-        searchedTerm +
-        "&status_type=" +
-        listingStatus +
-        "&bedsMin=" +
-        bedsMin +
-        "&minPrice=" +
-        priceMin +
-        "&sqftMin=" +
-        sqftMin +
-        "&buildYearMin=" +
-        buildYearMin +
-        "&buildYearMax=" +
-        buildYearMax +
-        "&lotSize=" +
-        lotSize,
-      {
-        headers: {
-          "x-rapidapi-key": apiKey,
-          "x-rapidapi-host": "zillow-com1.p.rapidapi.com",
-        },
-      }
-    );
+    let allHomes: any[] = [];
+    let currentPage = 1;
+    let hasMorePages = true;
 
-    const data = response.data;
+    while (hasMorePages) {
+      console.log(`Fetching page ${currentPage}...`);
+
+      // Build the query parameters
+      let queryParams = `?location=${searchedTerm}&page=${currentPage}`;
+
+      // Add optional parameters if they exist
+      if (listingStatus) queryParams += `&status_type=${listingStatus}`;
+      if (bedsMin) queryParams += `&bedsMin=${bedsMin}`;
+      if (priceMin) queryParams += `&minPrice=${priceMin}`;
+      if (sqftMin) queryParams += `&sqftMin=${sqftMin}`;
+      if (buildYearMin) queryParams += `&buildYearMin=${buildYearMin}`;
+      if (buildYearMax) queryParams += `&buildYearMax=${buildYearMax}`;
+      if (lotSize) queryParams += `&lotSize=${lotSize}`;
+
+      const response = await axios.get(
+        `${url}/propertyExtendedSearch${queryParams}`,
+        {
+          headers: {
+            "x-rapidapi-key": apiKey,
+            "x-rapidapi-host": "zillow-com1.p.rapidapi.com",
+          },
+        }
+      );
+
+      const data = response.data;
+
+      // Check if there are properties in this page
+      if (data?.props && data.props.length > 0) {
+        allHomes = allHomes.concat(data.props);
+        currentPage++;
+        if (currentPage === 14)
+          break
+        // Add a small delay to avoid hitting rate limits
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } else {
+        // No more properties found, stop pagination
+        hasMorePages = false;
+        console.log(`No more properties found on page ${currentPage}`);
+      }
+    }
+
+    console.log(`Total properties fetched: ${allHomes.length} across ${currentPage - 1} pages`);
 
     const refinedData = {
-      nearbyHomes: data?.props?.map((home: any) => ({
+      nearbyHomes: allHomes.map((home: any) => ({
         zpid: home.zpid,
         Address: home.address,
         Price: home.price,
@@ -70,10 +89,13 @@ export async function GET(request: Request) {
         dateSold: home.dateSold,
         Distance: 0,
       })),
+      totalPages: currentPage - 1,
+      totalProperties: allHomes.length,
     };
 
     return NextResponse.json(refinedData, { status: 200 });
   } catch (error: any) {
+    console.error("Error fetching Zillow data:", error.message);
     return NextResponse.json(
       { error: "Failed to fetch data from Zillow API", details: error.message },
       { status: 500 }
