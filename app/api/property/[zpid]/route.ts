@@ -5,12 +5,15 @@ import axios from "axios";
 // Used for main card, detailed view, or map popup.
 export async function GET(
   request: NextRequest,
-  { params }: { params: { zpid: string } }
+  { params }: { params: Promise<{ zpid: string }> }
 ) {
-  const zpid = params.zpid;
+  const { zpid } = await params;
 
   if (!zpid) {
-    return NextResponse.json({ error: "Missing 'zpid' param" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing 'zpid' param" },
+      { status: 400 }
+    );
   }
 
   const url = process.env.ZILLOW_URL as string;

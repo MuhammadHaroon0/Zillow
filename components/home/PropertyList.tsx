@@ -9,12 +9,14 @@ interface PropertyListProps {
   properties: any[];
   selectedState: string[];
   onPropertySelect: (property: any) => void;
+  setShowSelectedPropertyOnMap: (property: any) => void;
 }
 
 const PropertyList = ({
   properties,
   selectedState,
   onPropertySelect,
+  setShowSelectedPropertyOnMap,
 }: PropertyListProps) => {
   const [sortField, setSortField] = useState("Distance");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -87,10 +89,11 @@ const PropertyList = ({
                     {columns.find((col) => col.id === columnId)?.label}
 
                     <FaCaretDown
-                      className={`ml-1 transition-transform duration-200 ${sortField === columnId && sortDirection === "desc"
-                        ? "rotate-180"
-                        : ""
-                        }`}
+                      className={`ml-1 transition-transform duration-200 ${
+                        sortField === columnId && sortDirection === "desc"
+                          ? "rotate-180"
+                          : ""
+                      }`}
                     />
                   </div>
                 </th>
@@ -110,6 +113,7 @@ const PropertyList = ({
             selectedState={selectedState}
             columns={columns}
             onClick={() => onPropertySelect(property)}
+            setShowSelectedPropertyOnMap={setShowSelectedPropertyOnMap}
           />
         ))}
       </div>

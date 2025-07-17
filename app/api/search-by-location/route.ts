@@ -1,3 +1,4 @@
+import { getFullAddress } from "@/lib/utils";
 import axios from "axios";
 import { NextResponse } from "next/server";
 
@@ -60,10 +61,9 @@ export async function GET(request: Request) {
       if (data?.props && data.props.length > 0) {
         allHomes = allHomes.concat(data.props);
         currentPage++;
-        if (currentPage === 14)
-          break
+        if (currentPage === 14) break;
         // Add a small delay to avoid hitting rate limits
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
       } else {
         // No more properties found, stop pagination
         hasMorePages = false;
@@ -71,7 +71,11 @@ export async function GET(request: Request) {
       }
     }
 
-    console.log(`Total properties fetched: ${allHomes.length} across ${currentPage - 1} pages`);
+    console.log(
+      `Total properties fetched: ${allHomes.length} across ${
+        currentPage - 1
+      } pages`
+    );
 
     const refinedData = {
       nearbyHomes: allHomes.map((home: any) => ({

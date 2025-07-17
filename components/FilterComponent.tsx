@@ -11,14 +11,14 @@ import { MdOutlineTune } from "react-icons/md";
 import { useFilterStore } from "@/store/filterStates";
 
 const items = [
-  { id: "Distance", label: "Distance" },
-  { id: "Bedrooms", label: "Bedrooms" },
-  { id: "Price", label: "Price (Listed/Sold)" },
-  { id: "LivingArea", label: "Square Footage" },
-  { id: "Status", label: "Status (On Sale/Sold)" },
+  // { id: "Distance", label: "Distance" },
+  { id: "bedrooms", label: "Bedrooms" },
+  { id: "price", label: "Price (Listed/Sold)" },
+  { id: "livingArea", label: "Square Footage" },
+  { id: "listingStatus", label: "Status (On Sale/Sold)" },
   // { id: "YearBuilt", label: "Year Built" },
-  { id: "Bathrooms", label: "Bathrooms" },
-  { id: "Address", label: "Address" },
+  { id: "bathrooms", label: "Bathrooms" },
+  { id: "address", label: "Address" },
 ] as const;
 
 export const FilterComponent = () => {
