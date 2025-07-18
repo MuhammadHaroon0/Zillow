@@ -37,7 +37,6 @@ const PropertiesListComponent = () => {
   const { price, beds, sqft, buildYear, distance } = filterState;
 
   const updateQuery = useQueryState((state) => state.updateQuery);
-
   const selectedState = useFilterStore((state) => state.selectedState);
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
   const [showSelectedPropertyOnMap, setShowSelectedPropertyOnMap] = useState({
@@ -45,144 +44,96 @@ const PropertiesListComponent = () => {
     lng: 0,
   });
 
+  // Build query parameters for the unified endpoint
+  const buildQueryParams = useMemo(() => {
+    const params = new URLSearchParams();
+
+    if (searchedTerm) {
+      params.set("address", searchedTerm);
+    }
+
+    // Set radius and sold within months
+    if (distance) {
+      params.set("radius", distance.toString());
+    }
+    params.set("soldWithinMonths", "8");
+
+    // Apply filters
+    if (listingType) {
+      params.set("status_type", listingType);
+    }
+
+    if (price && price !== "-") {
+      const [minPrice, maxPrice] = price.split("-");
+      if (minPrice) params.set("minPrice", minPrice);
+      if (maxPrice) params.set("maxPrice", maxPrice);
+    }
+
+    if (beds && beds !== "-") {
+      const [bedsMin, bedsMax] = beds.split("-");
+      if (bedsMin) params.set("bedsMin", bedsMin);
+      if (bedsMax) params.set("bedsMax", bedsMax);
+    }
+
+    if (sqft && sqft !== "-") {
+      const [sqftMin, sqftMax] = sqft.split("-");
+      if (sqftMin) params.set("sqftMin", sqftMin);
+      if (sqftMax) params.set("sqftMax", sqftMax);
+    }
+
+    if (buildYear) {
+      if (buildYear.min) params.set("buildYearMin", buildYear.min);
+      if (buildYear.max) params.set("buildYearMax", buildYear.max);
+    }
+
+    return params.toString();
+  }, [searchedTerm, distance, listingType, price, beds, sqft, buildYear]);
+
+  // Single unified query
   const {
-    data: zpidId,
-    isSuccess: isSuccessZpidId,
-    isLoading: isLoadingZpidId,
-    isError: isErrorZpidId,
+    data: unifiedPropertyData,
+    isLoading: isLoadingUnified,
+    isError: isErrorUnified,
+    error: errorUnified,
+    refetch: refetchUnified,
   } = useQuery({
     queryFn: async () => {
-      const res = await axios.get(`/api/find-zpid?address=${searchedTerm}`);
+      const res = await axios.get(`/api/find-nearest?${buildQueryParams}`);
       return res.data;
     },
-    queryKey: ["zillow", searchedTerm],
+    queryKey: ["find-nearest", buildQueryParams],
     enabled: !!searchedTerm,
   });
 
+  // Update URL with coordinates when data is received
   useEffect(() => {
-    if (isSuccessZpidId && zpidId?.zpid) {
-      updateQuery("regionId", zpidId.zpid);
-      updateQuery("mapBounds.lat", zpidId?.summary?.latitude);
-      updateQuery("mapBounds.lng", zpidId?.summary?.longitude);
+    if (unifiedPropertyData?.mainProperty) {
+      const mainProp = unifiedPropertyData.mainProperty;
 
+      // Update query state
+      updateQuery("regionId", mainProp.zpid);
+      updateQuery("mapBounds.lat", mainProp.latitude);
+      updateQuery("mapBounds.lng", mainProp.longitude);
+
+      // Update URL
       const currentQuery = JSON.parse(
         decodeURIComponent(searchParams.get("query") || "{}")
       );
       const updatedQuery = {
         ...currentQuery,
-        regionId: zpidId.zpid,
+        regionId: mainProp.zpid,
         mapBounds: {
-          lat: zpidId?.summary?.latitude,
-          lng: zpidId?.summary?.longitude,
+          lat: mainProp.latitude,
+          lng: mainProp.longitude,
         },
       };
       const params = new URLSearchParams(searchParams.toString());
       params.set("query", encodeURIComponent(JSON.stringify(updatedQuery)));
       router.push(`?${params.toString()}`);
     }
-  }, [isSuccessZpidId, zpidId, router, searchedTerm]);
+  }, [unifiedPropertyData, router, searchParams, updateQuery]);
 
-  const {
-    data: propertyDataByLocation,
-    isLoading: isLoadingProperty,
-    error: errorProperty,
-  } = useQuery({
-    queryFn: async () => {
-      const res = await axios.get(`/api/property/${regionId}`);
-      return res.data;
-    },
-    enabled: !!regionId,
-    queryKey: ["zillow", regionId],
-  });
-
-  const {
-    data: propertyDataBySimilar,
-    isLoading: isLoadingSimilar,
-    error: errorSimilar,
-  } = useQuery({
-    queryFn: async () => {
-      const res = await axios.get(
-        `/api/similar/${regionId}?lat=${mapBounds.lat}&lng=${
-          mapBounds.lng
-        }&radius=${distance || 0.5}&soldWithinMonths=8`
-      );
-      return res.data;
-    },
-    enabled:
-      !!mapBounds?.lat && !!mapBounds?.lng && !addressRegex(searchedTerm),
-    queryKey: ["zillow", regionId, "similar"],
-  });
-
-  const filterProperty = useQuery({
-    queryFn: async () => {
-      const query = new URLSearchParams();
-      query.set("location", searchedTerm);
-      query.set("status_type", listingType);
-      query.set("minPrice", price.split("-")[0] || "");
-      query.set("maxPrice", price.split("-")[1] || "");
-      query.set("bedsMin", beds.split("-")[0] || "");
-      query.set("bedsMax", beds.split("-")[1] || "");
-      query.set("sqftMin", sqft.split("-")[0] || "");
-      query.set("sqftMax", sqft.split("-")[1] || "");
-      query.set("buildYearMin", buildYear.min || "");
-      query.set("buildYearMax", buildYear.max || "");
-
-      const res = await axios.get(`/api/search?${query.toString()}`);
-      return res.data;
-    },
-    queryKey: [`zillow-search`, listingType, price, beds, sqft, buildYear],
-    enabled: false,
-  });
-
-  const fetchRadius = useQuery({
-    queryFn: async () => {
-      const query = new URLSearchParams();
-      query.set(
-        "lat",
-        propertyDataByLocation?.data?.latitude?.toString() || ""
-      );
-      query.set(
-        "lng",
-        propertyDataByLocation?.data?.longitude?.toString() || ""
-      );
-      query.set("radius", distance);
-
-      const res = await axios.get(`/api/radius?${query.toString()}`);
-      return res.data;
-    },
-    queryKey: ["zillow", regionId, "radius", distance],
-    enabled:
-      !!searchedTerm &&
-      !!distance &&
-      !!propertyDataByLocation?.data?.latitude &&
-      !!propertyDataByLocation?.data?.longitude,
-  });
-
-  const {
-    data: propertyCompareData,
-    isLoading: isLoadingPropertyCompare,
-    isError: isErrorPropertyCompare,
-    isSuccess: isSuccessPropertyCompare,
-  } = useQuery({
-    queryFn: async () => {
-      const res = await axios.get(`/api/property-compare/${regionId}`);
-      return res.data;
-    },
-    queryKey: ["zillow", regionId, "property-compare"],
-    enabled: !!regionId && addressRegex(searchedTerm),
-  });
-
-  // Check if any filters are actually applied
-  const hasActiveFilters = useMemo(() => {
-    return (
-      listingType ||
-      (price && price !== "-") ||
-      (beds && beds !== "-") ||
-      (sqft && sqft !== "-") ||
-      (buildYear && (buildYear.min || buildYear.max))
-    );
-  }, [listingType, price, beds, sqft, distance, buildYear]);
-
+  // Map property data to consistent format
   const mapProperty = (item: any) => ({
     address: item.address,
     bathrooms: item.bathrooms,
@@ -198,135 +149,54 @@ const PropertiesListComponent = () => {
       (item.carouselPhotos ? item.carouselPhotos : [item.imgSrc]),
     price: item.lastSoldPrice || item.price,
     zpid: item.zpid,
+    dateSold: item.dateSold,
+    yearBuilt: item.yearBuilt,
   });
 
+  // Process property data
   const updatedPropertyData = useMemo(() => {
-    if (!propertyDataByLocation?.data) return [];
-    const mainProperty = mapProperty({
-      ...propertyDataByLocation.data,
-    });
+    if (!unifiedPropertyData) return [];
 
-    // Priority 1: Radius data
-    if (priority === "distance" && distance && fetchRadius?.data?.data?.props) {
-      const radiusProps = fetchRadius?.data?.data?.props?.map((r: any) =>
-        mapProperty({
-          ...r,
-          miniCardPhotos: [r?.imgSrc],
-        })
-      );
-      return [...radiusProps];
+    const mainProperty = mapProperty(unifiedPropertyData.mainProperty);
+    const nearbyProperties = unifiedPropertyData.nearbyProperties?.map(mapProperty) || [];
+
+    // For exact addresses, include main property first
+    if (addressRegex(searchedTerm)) {
+      return [mainProperty, ...nearbyProperties];
     }
 
-    // Priority 2: Filter/Search
-    if (
-      priority === "search" &&
-      hasActiveFilters &&
-      filterProperty?.data?.data?.props
-    ) {
-      const filterProps = filterProperty?.data?.data?.props?.map((f: any) =>
-        mapProperty({
-          ...f,
-          miniCardPhotos: f.carouselPhotos,
-        })
-      );
-      return [...filterProps];
-    }
+    // For location searches, return all nearby properties
+    return nearbyProperties.length > 0 ? nearbyProperties : [mainProperty];
+  }, [unifiedPropertyData, searchedTerm]);
 
-    // Priority 3: Similar
-    if (
-      (priority === "distance" || priority === "search") &&
-      propertyDataBySimilar?.data
-    ) {
-      if (addressRegex(searchedTerm)) {
-        const similarProps = propertyDataBySimilar?.data
-          ?.filter((s: any) => s.homeStatus === "RECENTLY_SOLD")
-          .map((s: any) => mapProperty(s));
-        return [mainProperty, ...similarProps];
-      } else {
-        const similarProps = propertyDataBySimilar?.data.map((s: any) =>
-          mapProperty(s)
-        );
-        return [mainProperty, ...similarProps];
-      }
-    }
-
-    if (isSuccessPropertyCompare && propertyCompareData?.data) {
-      const compareProps = propertyCompareData?.data?.map((c: any) =>
-        mapProperty(c)
-      );
-      return [mainProperty, ...compareProps];
-    }
-
-    // fallback
-    return [mainProperty];
-  }, [
-    propertyDataByLocation?.data,
-    propertyDataBySimilar?.data,
-    filterProperty?.data?.data?.props,
-    fetchRadius?.data?.data,
-    hasActiveFilters,
-    distance,
-    isSuccessPropertyCompare,
-    propertyCompareData?.data,
-  ]);
-
-  console.log(propertyDataBySimilar, "propertyDataBySimilar");
-
+  // Update selected property and property data
   useEffect(() => {
     if (updatedPropertyData.length > 0) {
       setSelectedProperty(updatedPropertyData[0]);
     }
-
     setPropertyData(updatedPropertyData);
-  }, [updatedPropertyData]);
+  }, [updatedPropertyData, setPropertyData]);
 
-  useEffect(() => {
-    if (hasActiveFilters && regionId && searchedTerm) {
-      filterProperty.refetch();
-    }
-  }, [
-    hasActiveFilters,
-    regionId,
-    searchedTerm,
-    listingType,
-    price,
-    beds,
-    sqft,
-    buildYear,
-  ]);
-
-  if (isErrorZpidId) {
+  // Error handling
+  if (isErrorUnified) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center bg-gray-50">
         <div className="text-center p-8 bg-white rounded-lg shadow-sm border border-red-200 max-w-md">
           <div className="text-red-500 text-5xl mb-4">⚠️</div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">
-            No property found
+            {"response" in errorUnified && (errorUnified as any).response?.status === 404
+              ? "No property found"
+              : "Error Loading Properties"}
           </h3>
-        </div>
-      </div>
-    );
-  }
 
-  if (
-    errorProperty ||
-    errorSimilar ||
-    fetchRadius.error ||
-    isErrorPropertyCompare
-  ) {
-    return (
-      <div className="min-h-[80vh] flex items-center justify-center bg-gray-50">
-        <div className="text-center p-8 bg-white rounded-lg shadow-sm border border-red-200 max-w-md">
-          <div className="text-red-500 text-5xl mb-4">⚠️</div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">
-            Error Loading Properties
-          </h3>
           <p className="text-gray-600 mb-4">
-            We encountered an issue while searching for properties. Please try
-            again.
+            {"response" in errorUnified && (errorUnified as any).response?.status === 404
+              ? "We couldn't find any properties for the given address."
+              : "We encountered an issue while searching for properties. Please try again."}
           </p>
+
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => refetchUnified()}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Retry Search
@@ -336,14 +206,8 @@ const PropertiesListComponent = () => {
     );
   }
 
-  if (
-    isLoadingProperty ||
-    isLoadingZpidId ||
-    isLoadingSimilar ||
-    filterProperty.isLoading ||
-    fetchRadius.isLoading ||
-    isLoadingPropertyCompare
-  ) {
+  // Loading state
+  if (isLoadingUnified) {
     return (
       <div className="w-full flex items-center justify-center p-8 h-[80vh]">
         <PageLoader />
@@ -351,10 +215,10 @@ const PropertiesListComponent = () => {
     );
   }
 
-  // Show default page when no search term or when property data is empty/invalid
-  if (updatedPropertyData.length === 0) {
+  // Show default page when no search term or when property data is empty
+  if (!searchedTerm || updatedPropertyData.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex  justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex justify-center p-4">
         <div className="max-w-4xl mx-auto mt-10 text-center">
           <div className="mb-8">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
@@ -396,6 +260,7 @@ const PropertiesListComponent = () => {
               </p>
             </div>
           </div>
+
           <div className="mt-8 bg-blue-600 text-white p-4 rounded-xl max-w-md mx-auto">
             <h4 className="font-semibold mb-2">Property Types on Map</h4>
             <div className="grid grid-cols-2 gap-2 text-sm">
@@ -442,17 +307,19 @@ const PropertiesListComponent = () => {
           onPropertySelect={setSelectedProperty}
           setShowSelectedPropertyOnMap={setShowSelectedPropertyOnMap}
         />
-        {priority === "search" &&
-          propertyDataBySimilar?.data?.length <= 0 &&
-          !filterProperty?.data?.data?.props?.length && (
-            <div className="w-full flex items-center mt-4 justify-center">
-              <div className="text-center p-8  bg-white rounded-lg shadow-sm border border-red-200 max-w-md">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  ⚠️ Date sold not available for these properties
-                </h3>
-              </div>
+
+        {/* Show search results info */}
+        {unifiedPropertyData?.searchResults && (
+          <div className="w-full flex items-center mt-4 justify-center">
+            <div className="text-center p-4 bg-white rounded-lg shadow-sm border border-gray-200 max-w-md">
+              <p className="text-sm text-gray-600">
+                Found {unifiedPropertyData.searchResults.totalFound} properties within{" "}
+                {unifiedPropertyData.searchResults.radiusMiles} miles •
+                Sold within {unifiedPropertyData.searchResults.soldWithinMonths} months
+              </p>
             </div>
-          )}
+          </div>
+        )}
       </div>
     </div>
   );
