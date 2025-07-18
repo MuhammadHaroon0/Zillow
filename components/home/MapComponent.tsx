@@ -79,42 +79,15 @@ export default function GoogleMapComponent({
 
   const [selected, setSelected] = useState<Property | null>(null);
 
-  const polygonCoords = useMemo(() => {
-    if (!mapCenter.lat || !mapCenter.lng) return [];
 
-    return Array.from({ length: 36 }, (_, i) => {
-      const angle = (i / 36) * 2 * Math.PI;
-      const latOffset = 0.02 * Math.sin(angle) * (1 + 0.3 * Math.cos(angle));
-      const lngOffset = 0.015 * Math.cos(angle);
-      return {
-        lat: mapCenter.lat + latOffset,
-        lng: mapCenter.lng + lngOffset,
-      };
-    });
-  }, [mapCenter]);
 
-  const polygon = useMemo(() => {
-    if (!isLoaded) return null;
-    return new window.google.maps.Polygon({ paths: polygonCoords });
-  }, [polygonCoords, isLoaded]);
 
-  const filteredProperties = useMemo(() => {
-    if (!polygon || !propertyData) return propertyData || [];
 
-    return propertyData?.filter((property: Property) => {
-      if (!property.latitude || !property.longitude) return false;
 
-      return window.google.maps.geometry.poly.containsLocation(
-        new window.google.maps.LatLng(property.latitude, property.longitude),
-        polygon
-      );
-    });
-  }, [polygon, propertyData]);
 
-  const propertiesToShow =
-    filteredProperties.length > 0 ? filteredProperties : propertyData || [];
 
   if (!isLoaded) return <div>Loading map...</div>;
+  console.log(propertyData);
 
   return (
     <div className="h-full w-full rounded-xl overflow-hidden">
@@ -138,22 +111,10 @@ export default function GoogleMapComponent({
           }
         }}
       >
-        {/* Egg-shaped polygon */}
-        <Polygon
-          paths={polygonCoords}
-          options={{
-            fillColor: "#3B82F6",
-            fillOpacity: 0.1,
-            strokeColor: "#3B82F6",
-            strokeOpacity: 0.8,
-            strokeWeight: 2,
-            clickable: false,
-            zIndex: 100,
-          }}
-        />
+
 
         {/* Property markers */}
-        {propertiesToShow.map((property: Property, index: number) => (
+        {propertyData.map((property: Property, index: number) => (
           <div key={index}>
             <Marker
               position={{ lat: property.latitude, lng: property.longitude }}
@@ -174,11 +135,10 @@ export default function GoogleMapComponent({
                 className="relative cursor-pointer transform -translate-x-1/2 -translate-y-full w-16"
               >
                 <div
-                  className={`px-3 py-1.5 w-full ${
-                    property.listingStatus === "RECENTLY_SOLD"
-                      ? "bg-red-500"
-                      : "bg-green-500"
-                  } hover:bg-green-400 shadow-md font-bold hover:font-normal text-center transition-all duration-200 relative text-white`}
+                  className={`px-3 py-1.5 w-full ${property.listingStatus === "RECENTLY_SOLD"
+                    ? "bg-red-500"
+                    : "bg-green-500"
+                    } hover:bg-green-400 shadow-md font-bold hover:font-normal text-center transition-all duration-200 relative text-white`}
                 >
                   <span className="text-sm whitespace-nowrap">
                     {property.price
