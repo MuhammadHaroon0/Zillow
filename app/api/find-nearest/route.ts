@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
-
+function delay(ms: number) {
+    return new Promise((res) => setTimeout(res, ms));
+}
 function generateCirclePolygon(
     centerLat: number,
     centerLng: number,
@@ -106,7 +108,7 @@ export async function GET(request: NextRequest) {
                 "x-rapidapi-host": "zillow-com1.p.rapidapi.com",
             },
         });
-
+        await delay(600);
         let zpidData = zpidResponse.data;
         let mainProperty = null;
 
@@ -139,7 +141,7 @@ export async function GET(request: NextRequest) {
                     },
                 });
 
-
+                await delay(600);
                 if (propertyDetailResponse.data?.latitude && propertyDetailResponse.data?.longitude) {
                     latitude = propertyDetailResponse.data.latitude;
                     longitude = propertyDetailResponse.data.longitude;
