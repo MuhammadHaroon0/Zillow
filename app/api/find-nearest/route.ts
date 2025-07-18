@@ -178,7 +178,8 @@ export async function GET(request: NextRequest) {
             },
         });
 
-        const nearbyProps = nearbyPropsResponse.data?.props || nearbyPropsResponse.data || [];
+        let nearbyPropsRaw = nearbyPropsResponse.data?.props ?? nearbyPropsResponse.data ?? [];
+        let nearbyProps: any[] = Array.isArray(nearbyPropsRaw) ? nearbyPropsRaw : [];
 
         let filteredProps = nearbyProps.filter((prop: any) => {
             if (prop.dateSold && !isWithinSoldMonths(prop.dateSold, soldWithinMonths)) {
@@ -194,6 +195,7 @@ export async function GET(request: NextRequest) {
 
             return true;
         });
+
 
 
         const responseData = {
