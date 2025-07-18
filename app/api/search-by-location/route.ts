@@ -26,27 +26,41 @@ export async function GET(request: Request) {
   }
 
   try {
-    let allHomes: any[] = [];
-    let currentPage = 1;
-    let hasMorePages = true;
+    const response = await axios.get(
+      url +
+        "/propertyExtendedSearch" +
+        "?location=" +
+        searchedTerm +
+        "&status_type=" +
+        listingStatus +
+        "&bedsMin=" +
+        bedsMin +
+        "&minPrice=" +
+        priceMin +
+        "&sqftMin=" +
+        sqftMin +
+        "&buildYearMin=" +
+        buildYearMin +
+        "&buildYearMax=" +
+        buildYearMax,
+        // "&lotSizeMin=" +
+        // lotSize,
+      {
+        headers: {
+          "x-rapidapi-key": apiKey,
+          "x-rapidapi-host": "zillow-com1.p.rapidapi.com",
+        },
+      }
+    );
 
-    while (hasMorePages) {
-      console.log(`Fetching page ${currentPage}...`);
-
-      // Build the query parameters
-      let queryParams = `?location=${searchedTerm}&page=${currentPage}`;
-
-      // Add optional parameters if they exist
-      if (listingStatus) queryParams += `&status_type=${listingStatus}`;
-      if (bedsMin) queryParams += `&bedsMin=${bedsMin}`;
-      if (priceMin) queryParams += `&minPrice=${priceMin}`;
-      if (sqftMin) queryParams += `&sqftMin=${sqftMin}`;
-      if (buildYearMin) queryParams += `&buildYearMin=${buildYearMin}`;
-      if (buildYearMax) queryParams += `&buildYearMax=${buildYearMax}`;
-      if (lotSize) queryParams += `&lotSize=${lotSize}`;
-
+    const data = response.data;
+    //check if search is done by address and only one property is returned
+    if(data && !Array.isArray(data) && typeof data === "object" && Object.keys(data).length === 1 && data.hasOwnProperty("zpid") && data.zpid){
       const response = await axios.get(
-        `${url}/propertyExtendedSearch${queryParams}`,
+        url +
+          "/property" +
+          "?zpid=" + 
+          data.zpid,
         {
           headers: {
             "x-rapidapi-key": apiKey,
@@ -54,31 +68,31 @@ export async function GET(request: Request) {
           },
         }
       );
+      const property = response.data;
+      const refinedData = {
+        nearbyHomes:[
+          {
+            zpid: property.zpid,
+            Address: getFullAddress(property.address),
+            Price: property.price,
+            LivingArea: property.livingAreaValue,
+            image: property.imgSrc,
+            Bedrooms: property.bedrooms,
+            Bathrooms: property.bathrooms,
+            YearBuilt: property.yearBuilt,
+            Status: property.homeStatus,
+            latitude: property.latitude,
+            longitude: property.longitude,
+            dateSold: property.dateSold,
+            Distance: 0,
+          }
+        ]
+      };
 
-      const data = response.data;
-
-      // Check if there are properties in this page
-      if (data?.props && data.props.length > 0) {
-        allHomes = allHomes.concat(data.props);
-        currentPage++;
-        if (currentPage === 14) break;
-        // Add a small delay to avoid hitting rate limits
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      } else {
-        // No more properties found, stop pagination
-        hasMorePages = false;
-        console.log(`No more properties found on page ${currentPage}`);
-      }
+      return NextResponse.json(refinedData, { status: 200 });
     }
-
-    console.log(
-      `Total properties fetched: ${allHomes.length} across ${
-        currentPage - 1
-      } pages`
-    );
-
     const refinedData = {
-      nearbyHomes: allHomes.map((home: any) => ({
+      nearbyHomes: data?.props?.map((home: any) => ({
         zpid: home.zpid,
         Address: home.address,
         Price: home.price,
@@ -93,13 +107,10 @@ export async function GET(request: Request) {
         dateSold: home.dateSold,
         Distance: 0,
       })),
-      totalPages: currentPage - 1,
-      totalProperties: allHomes.length,
     };
 
     return NextResponse.json(refinedData, { status: 200 });
   } catch (error: any) {
-    console.error("Error fetching Zillow data:", error.message);
     return NextResponse.json(
       { error: "Failed to fetch data from Zillow API", details: error.message },
       { status: 500 }

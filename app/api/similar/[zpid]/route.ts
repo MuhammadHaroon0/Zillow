@@ -90,27 +90,31 @@ export async function GET(request: NextRequest) {
     // 1. Generate polygon for 0.5 mile radius
     const polygon = generateCirclePolygon(latitude, longitude, 0.5);
 
+    // 2. Convert polygon to URL-encoded string format (lng lat pairs)
     const polygonString = polygon
       .map((point) => `${point.lng} ${point.lat}`)
       .join(", ");
 
-    // 2. Fetch all properties within this polygon
-    const propsResp = await axios.post(
-      url + `/propertyByPolygon?polygon=${polygonString}`,
-
-      {
-        headers: {
-          "x-rapidapi-key": apiKey,
-          "x-rapidapi-host": "zillow-com1.p.rapidapi.com",
-        },
-      }
-    );
+    // 3. Fetch all properties within this polygon
+    const propsResp = await axios.get(url + "/propertyByPolygon", {
+      params: {
+        polygon: polygonString,
+      },
+      headers: {
+        "x-rapidapi-key": apiKey,
+        "x-rapidapi-host": "zillow-com1.p.rapidapi.com",
+      },
+    });
 
     const props = propsResp.data?.props || propsResp.data || [];
 
+    console.log(props, "props");
+
     // 3. Filter by dateSold and distance
-    const filtered = props.filter((p: any) => {
+    const filtered = props?.filter((p: any) => {
+      console.log(p.dateSold, "dateSold");
       if (!isWithin8Months(p.dateSold)) return false;
+      // if (typeof p.dateSold === "undefined") return true;
       if (haversineDistance(latitude, longitude, p.latitude, p.longitude) > 0.5)
         return false;
       return true;

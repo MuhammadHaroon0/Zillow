@@ -72,14 +72,14 @@ const PropertyList = ({
   };
 
   return (
-    <div className="w-full flex flex-col items-center overflow-scroll scrollbar-hide h-[75%] md:px-2 px-1">
+    <div className="w-full flex flex-col items-center overflow-scroll scrollbar-hide max-h-[75%] md:px-2 px-1">
       <div className="w-full">
         <table className="w-full table-fixed">
           <thead>
             <tr>
-              {selectedState?.map((columnId, index) => (
+              {selectedState?.map((columnId) => (
                 <th
-                  key={columnId + `index-${index}`}
+                  key={columnId}
                   className="text-sm text-black font-medium text-center w-26"
                 >
                   <div
@@ -108,7 +108,7 @@ const PropertyList = ({
       <div className="w-full h-full">
         {sortedData?.map((property: any, index: number) => (
           <PropertyCard
-            key={property.zpid + `index-${index}`}
+            key={index}
             property={property}
             selectedState={selectedState}
             columns={columns}
